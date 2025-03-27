@@ -5,7 +5,7 @@
 
 // OPERACIONES ARITMÉTICAS
 #define OPCODE_ADD      0x458   // ADD (register)
-
+#define OPCODE_ADDI     0x488   // ADD (immediate)
 #define OPCODE_ADDS     0x558   // ADDS (register)
 
 
