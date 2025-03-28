@@ -3,7 +3,7 @@
 #include <string.h>
 #include "shell.h"
 
-// OPERACIONES ARITMÉTICAS
+// OPCODES
 #define OPCODE_HLT      0x6A2  // HLT
 #define OPCODE_ADDS     0x558  // ADDS (register)
 #define OPCODE_ADDIS_0  0x588  // ADDS (immediate). SHIFT=000
