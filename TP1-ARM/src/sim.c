@@ -49,7 +49,7 @@ void execute_orr(uint32_t instruction);
 // void execute_br(uint32_t instruction);
 // void execute_b_cond(uint32_t instruction);
 void execute_lsl(uint32_t instruction);
-// void execute_lsr(uint32_t instruction);
+void execute_lsr(uint32_t instruction);
 void execute_stur(uint32_t instruction);
 void execute_sturb(uint32_t instruction);
 void execute_sturh(uint32_t instruction);
@@ -338,10 +338,10 @@ void execute_lsr(uint32_t instruction)
 {
     int rd = instruction & 0x1F;
     int rn = (instruction >> 5) & 0x1F;
-    int imm = (instruction >> 16) & 0x3F;
+    int immr = (instruction >> 16) & 0x3F;
 
     int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
-    int64_t result = (uint64_t)val_n >> imm; // PREGUNTARLE A PETER POR EL UINT64_T
+    int64_t result = val_n >> immr;
 
     NEXT_STATE.FLAG_N = (result < 0);
     NEXT_STATE.FLAG_Z = (result == 0);
