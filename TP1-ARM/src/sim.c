@@ -14,11 +14,13 @@
 #define OPCODE_ANDS     0x750  // ANDS (shifted register)
 #define OPCODE_EOR      0x650  // EOR (shifted register)
 #define OPCODE_ORR      0x550  // ORR (shifted register)
-// #define OPCODE_B        0x5    // B. REVISAR
+// #define OPCODE_B        0x5    // B. REVISAR --> OK según piter (raro igual)
 // #define OPCODE_BR       0x___ // BR. REVISAR
-// #define OPCODE_B.COND   0x54   // B.COND. REVISAR
+// #define OPCODE_BR       0x6B0 // Según piter.
+// #define OPCODE_B.COND   0x54   // B.COND. REVISAR --> OK según piter
 #define OPCODE_LSL      0x34D  // LSL (immediate)
 // #define OPCODE_LSR      0x34D  // LSR (immediate) ES IGUAL A LSL. REVISAR
+#define OPCODE_LSR      0x69A  // LSR (immediate) --> Según piter.
 #define OPCODE_STUR     0x7C0  // STUR
 #define OPCODE_STURB    0x1C0  // STURB
 #define OPCODE_STURH    0x3C0  // STURH
@@ -121,6 +123,10 @@ void process_instruction()
             break;
         case OPCODE_LSL:
             printf("LSL\n");
+            execute_lsl(instruction);
+            break;
+        case OPCODE_LSR:
+            printf("LSR\n");
             execute_lsl(instruction);
             break;
         default:
@@ -311,7 +317,22 @@ void execute_lsl(uint32_t instruction)
     }
 }
 
-// EXECUTE LSR
+void execute_lsr(uint32_t instruction)
+{
+    int rd = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int imm = (instruction >> 10) & 0x3F
+
+    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
+    int64_t result = (uint64_t)val_n >> immr;
+
+    NEXT_STATE.FLAG_N = (result < 0);
+    NEXT_STATE.FLAG_Z = (result == 0);
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = result;
+    }    
+}
 
 void execute_add(uint32_t instruction)
 {
