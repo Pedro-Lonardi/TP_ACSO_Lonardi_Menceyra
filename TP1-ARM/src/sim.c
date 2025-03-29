@@ -267,9 +267,6 @@ void execute_eor(uint32_t instruction)
     int64_t val_m = (rm == 31) ? 0 : CURRENT_STATE.REGS[rm];
     int64_t result = val_n ^ val_m;
 
-    NEXT_STATE.FLAG_N = (result < 0);
-    NEXT_STATE.FLAG_Z = (result == 0);
-
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
