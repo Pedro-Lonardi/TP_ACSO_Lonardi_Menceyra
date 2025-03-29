@@ -318,12 +318,24 @@ void execute_lsl(uint32_t instruction)
 {
     int rd = instruction & 0x1F;
     int rn = (instruction >> 5) & 0x1F;
-    int immr = (instruction >> 10) & 0x3F;
+    int imms = (instruction >> 10) & 0x3F;
 
-    int shift = (63 - imms);
+    // Verificación de decodificación
+    printf("Opcode: 0x%X, rd: %d, rn: %d, imms: %d\n", instruction, rd, rn, imms);
+
+    int shift = 63 - imms;
+
+    // Verificar que shift es válido
+    if (shift < 0 || shift > 63) {
+        printf("ERROR: Shift fuera de rango (%d)\n", shift);
+        return;
+    }
 
     int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
     int64_t result = val_n << shift;
+
+    // Verificar resultado antes de guardarlo
+    printf("Shift: %d, Val_n: %lld, Result: %lld\n", shift, val_n, result);
 
     NEXT_STATE.FLAG_N = (result < 0);
     NEXT_STATE.FLAG_Z = (result == 0);
@@ -332,6 +344,7 @@ void execute_lsl(uint32_t instruction)
         NEXT_STATE.REGS[rd] = result;
     }
 }
+
 
 void execute_lsr(uint32_t instruction)
 {
