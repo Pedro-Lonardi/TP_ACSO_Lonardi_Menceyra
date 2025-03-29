@@ -79,7 +79,7 @@ void process_instruction()
     printf("Opcode 8 bits: 0x%x\n", opcode_8);
     printf("Opcode 11 bits: 0x%x\n", opcode_11);
 
-    // NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 
     switch (opcode_8) {
         case OPCODE_CBZ:
