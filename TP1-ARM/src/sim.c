@@ -321,16 +321,33 @@ void execute_lsr(uint32_t instruction)
 {
     int rd = instruction & 0x1F;
     int rn = (instruction >> 5) & 0x1F;
-    int imm = (instruction >> 10) & 0x3F
+    int imm = (instruction >> 10) & 0x3F;
 
     int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
-    int64_t result = (uint64_t)val_n >> immr;
+    int64_t result = (uint64_t)val_n >> imm; // PREGUNTARLE A PETER POR EL UINT64_T
 
     NEXT_STATE.FLAG_N = (result < 0);
     NEXT_STATE.FLAG_Z = (result == 0);
 
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+// EXECUTE_STUR
+// EXECUTE_STURB
+// EXECUTE_STURH
+// EXECUTE_LDUR
+// EXECUTE_LDURB
+// EXECUTE_LDURH
+
+void execute_movz(uint32_t instruction)
+{
+    int rd = instruction & 0x1F;
+    int imm = (instruction >> 5) & 0xFFFF;
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = imm;
     }
 }
 
@@ -346,5 +363,58 @@ void execute_add(uint32_t instruction)
 
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+void execute_mul(uint32_t instruction)
+{
+    int rd = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int rm = (instruction >> 16) & 0x1F;
+
+    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
+    int64_t val_m = (rm == 31) ? 0 : CURRENT_STATE.REGS[rm];
+    int64_t result = val_n * val_m;
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+void execute_cbz(uint32_t instruction)
+{
+    int rt = instruction & 0x1F;
+    int32_t imm = (instruction >> 5) & 0x7FFFF;
+
+    // Verifica si el imm es positivo o negativo y hace el sign-extend
+    if (imm & (1 << 18)) {
+        imm |= ~0x7FFFF;
+    }
+
+    int64_t offset = ((int64_t)imm << 2);
+
+    if (CURRENT_STATE.REGS[rt] == 0) {
+        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+    } else {
+        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    }
+}
+
+void execute_cbnz(uint32_t instruction)
+{
+    int rt = instruction & 0x1F;
+    int32_t imm = (instruction >> 5) & 0x7FFFF;
+
+    // Verifica si el imm es positivo o negativo y hace el sign-extend
+    if (imm & (1 << 18)) {
+        imm |= ~0x7FFFF;
+    }
+
+    int64_t offset = ((int64_t)imm << 2);
+
+    if (CURRENT_STATE.REGS[rt] != 0) {
+        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+    } else {
+        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     }
 }
