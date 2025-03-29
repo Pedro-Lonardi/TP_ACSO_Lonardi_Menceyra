@@ -8,11 +8,9 @@
 #define OPCODE_ADDS     0x558  // ADDS (register)
 #define OPCODE_ADDIS_0  0x588  // ADDS (immediate). SHIFT=000
 #define OPCODE_ADDIS_1  0x58A  // ADDS (immediate). SHIFT=010
-#define OPCODE_SUBS     0x758  // SUBS (register)
-#define OPCODE_SUBIS_0  0x788  // SUBIS (immediate). SHIFT=000
-#define OPCODE_SUBIS_1  0x78A  // SUBIS (immediate). SHIFT=010
-#define OPCODE_CMP      0x759  // CMP (register)
-// #define OPCODE_CMPI     0xF1   // CMP (immediate) ES IGUAL A SUBIS
+#define OPCODE_SUBS     0x758  // SUBS (register). CMP SI RD=XZR
+#define OPCODE_SUBIS_0  0x788  // SUBIS (immediate). SHIFT=000. CMPI SI RD=XZR
+#define OPCODE_SUBIS_1  0x78A  // SUBIS (immediate). SHIFT=010. CMPI SI RD=XZR
 #define OPCODE_ANDS     0x750  // ANDS (shifted register)
 #define OPCODE_EOR      0x650  // EOR (shifted register)
 #define OPCODE_ORR      0x550  // ORR (shifted register)
@@ -43,8 +41,6 @@ void execute_addis_1(uint32_t instruction);
 void execute_subs(uint32_t instruction);
 void execute_subis_0(uint32_t instruction);
 void execute_subis_1(uint32_t instruction);
-void execute_cmp(uint32_t instruction);
-// void execute_cmpi(uint32_t instruction);
 void execute_ands(uint32_t instruction);
 void execute_eor(uint32_t instruction);
 void execute_orr(uint32_t instruction);
@@ -82,21 +78,61 @@ void process_instruction()
     printf("Opcode 11 bits: 0x%x\n", opcode_11);
 
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+
+    switch(opcode_11) {
+        case OPCODE_HLT:
+            execute_hlt(instruction);
+            break;
+        case OPCODE_ADDS:
+            printf("ADDS\n");
+            execute_adds(instruction);
+            break;
+        case OPCODE_ADDIS_0:
+            printf("ADDIS (SHIFT=000)\n");
+            execute_addis_0(instruction);
+            break;
+        case OPCODE_ADDIS_1:
+            printf("ADDIS (SHIFT=010)\n");
+            execute_addis_1(instruction);
+            break;
+        case OPCODE_SUBS:
+            printf("SUBS\n");
+            execute_subs(instruction);
+            break;
+        case OPCODE_SUBIS_0:
+            printf("SUBIS (SHIFT=000)\n");
+            execute_subis_0(instruction);
+            break;
+        case OPCODE_SUBIS_1:
+            printf("SUBIS (SHIFT=010)\n");
+            execute_subis_1(instruction);
+            break;
+        case OPCODE_ANDS:
+            printf("ANDS\n");
+            execute_ands(instruction);
+            break;
+        case OPCODE_EOR:
+            printf("EOR\n");
+            execute_eor(instruction);
+            break;
+        case OPCODE_ORR:
+            printf("ORR\n");
+            execute_orr(instruction);
+            break;
+        case OPCODE_LSL:
+            printf("LSL\n");
+            execute_lsl(instruction);
+            break;
+        default:
+            printf("Instrucción 0x%x no reconocida\n", instruction);
+            break;
+    }
 }
 
-void execute_add(uint32_t instruction)
+void execute_hlt(uint32_t instruction)
 {
-    int rd = instruction & 0x1F;
-    int rn = (instruction >> 5) & 0x1F;
-    int rm = (instruction >> 16) & 0x1F;
-
-    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
-    int64_t val_m = (rm == 31) ? 0 : CURRENT_STATE.REGS[rm];
-    int64_t result = val_n + val_m;
-
-    if (rd != 31) {
-        NEXT_STATE.REGS[rd] = result;
-    }
+    printf("HLT\n");
+    RUN_BIT = 0;
 }
 
 void execute_adds(uint32_t instruction)
@@ -117,7 +153,7 @@ void execute_adds(uint32_t instruction)
     }
 }
 
-void execute_addis(uint32_t instruction)
+void execute_addis_0(uint32_t instruction)
 {
     int rd = instruction & 0x1F;
     int rn = (instruction >> 5) & 0x1F;
@@ -128,6 +164,167 @@ void execute_addis(uint32_t instruction)
 
     NEXT_STATE.FLAG_N = (result < 0);
     NEXT_STATE.FLAG_Z = (result == 0);
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+void execute_addis_1(uint32_t instruction)
+{
+    int rd = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int imm = (instruction >> 10) & 0xFFF;
+
+    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
+    int64_t result = val_n + (imm << 12);
+
+    NEXT_STATE.FLAG_N = (result < 0);
+    NEXT_STATE.FLAG_Z = (result == 0);
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+void execute_subs(uint32_t instruction) // REVISAR CASO DE CMP
+{
+    int rd = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int rm = (instruction >> 16) & 0x1F;
+
+    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
+    int64_t val_m = (rm == 31) ? 0 : CURRENT_STATE.REGS[rm];
+    int64_t result = val_n - val_m;
+
+    NEXT_STATE.FLAG_N = (result < 0);
+    NEXT_STATE.FLAG_Z = (result == 0);
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+void execute_subis_0(uint32_t instruction)  // REVISAR CASO DE CMPI
+{
+    int rd = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int imm = (instruction >> 10) & 0xFFF;
+
+    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
+    int64_t result = val_n - imm;
+
+    NEXT_STATE.FLAG_N = (result < 0);
+    NEXT_STATE.FLAG_Z = (result == 0);
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+void execute_subis_1(uint32_t instruction) // REVISAR CASO DE CMPI
+{
+    int rd = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int imm = (instruction >> 10) & 0xFFF;
+
+    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
+    int64_t result = val_n - (imm << 12);
+
+    NEXT_STATE.FLAG_N = (result < 0);
+    NEXT_STATE.FLAG_Z = (result == 0);
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+void execute_ands(uint32_t instruction)
+{
+    int rd = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int rm = (instruction >> 16) & 0x1F;
+
+    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
+    int64_t val_m = (rm == 31) ? 0 : CURRENT_STATE.REGS[rm];
+    int64_t result = val_n & val_m;
+
+    NEXT_STATE.FLAG_N = (result < 0);
+    NEXT_STATE.FLAG_Z = (result == 0);
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+void execute_eor(uint32_t instruction)
+{
+    int rd = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int rm = (instruction >> 16) & 0x1F;
+
+    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
+    int64_t val_m = (rm == 31) ? 0 : CURRENT_STATE.REGS[rm];
+    int64_t result = val_n ^ val_m;
+
+    NEXT_STATE.FLAG_N = (result < 0);
+    NEXT_STATE.FLAG_Z = (result == 0);
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+void execute_orr(uint32_t instruction)
+{
+    int rd = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int rm = (instruction >> 16) & 0x1F;
+
+    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
+    int64_t val_m = (rm == 31) ? 0 : CURRENT_STATE.REGS[rm];
+    int64_t result = val_n | val_m;
+
+    NEXT_STATE.FLAG_N = (result < 0);
+    NEXT_STATE.FLAG_Z = (result == 0);
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+// EXECUTE_B
+// EXECUTE_BR
+// EXECUTE_B_COND
+
+void execute_lsl(uint32_t instruction)
+{
+    int rd = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int imm = (instruction >> 10) & 0x3F;
+
+    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
+    int64_t result = val_n << imm;
+
+    NEXT_STATE.FLAG_N = (result < 0);
+    NEXT_STATE.FLAG_Z = (result == 0);
+
+    if (rd != 31) {
+        NEXT_STATE.REGS[rd] = result;
+    }
+}
+
+// EXECUTE LSR
+
+void execute_add(uint32_t instruction)
+{
+    int rd = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int rm = (instruction >> 16) & 0x1F;
+
+    int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
+    int64_t val_m = (rm == 31) ? 0 : CURRENT_STATE.REGS[rm];
+    int64_t result = val_n + val_m;
 
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
