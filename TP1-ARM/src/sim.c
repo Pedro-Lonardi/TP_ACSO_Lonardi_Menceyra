@@ -318,10 +318,12 @@ void execute_lsl(uint32_t instruction)
 {
     int rd = instruction & 0x1F;
     int rn = (instruction >> 5) & 0x1F;
-    int imm = (instruction >> 16) & 0x3F;
+    int immr = (instruction >> 10) & 0x3F;
+
+    int shift = (63 - imms);
 
     int64_t val_n = (rn == 31) ? 0 : CURRENT_STATE.REGS[rn];
-    int64_t result = val_n << imm;
+    int64_t result = val_n << shift;
 
     NEXT_STATE.FLAG_N = (result < 0);
     NEXT_STATE.FLAG_Z = (result == 0);
