@@ -20,7 +20,7 @@
 // #define OPCODE_B.COND   0x54   // B.COND. REVISAR --> OK según piter
 #define OPCODE_LSL      0x34D  // LSL (immediate)
 // #define OPCODE_LSR      0x34D  // LSR (immediate) ES IGUAL A LSL. REVISAR
-#define OPCODE_LSR      0x69A  // LSR (immediate) --> Según piter.
+#define OPCODE_LSR      0x69B  // LSR (immediate) --> Según piter.
 #define OPCODE_STUR     0x7C0  // STUR
 #define OPCODE_STURB    0x1C0  // STURB
 #define OPCODE_STURH    0x3C0  // STURH
@@ -331,7 +331,7 @@ void execute_lsr(uint32_t instruction)
 
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
-    }    
+    }
 }
 
 void execute_add(uint32_t instruction)
