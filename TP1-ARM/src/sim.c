@@ -140,6 +140,10 @@ void process_instruction()
             printf("LSR\n");
             execute_lsl(instruction);
             break;
+        case OPCODE_MOVZ:
+            printf("MOVZ\n");
+            execute_movz(instruction);
+            break;
         default:
             printf("Instrucción 0x%x no reconocida\n", instruction);
             break;
