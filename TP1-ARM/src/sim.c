@@ -332,7 +332,7 @@ int64_t sign_extend(int32_t value, int bits) {
 void execute_b(uint32_t instruction)
 {
     int imm26 = instruction & 0x3FFFFFF;
-    int64_t offset = sign_extend(imm26 << 2, 28) * 4;
+    int64_t offset = sign_extend(imm26 << 2, 28);
 
     if (instruction != 31) {
         NEXT_STATE.PC = CURRENT_STATE.PC + offset;
@@ -357,7 +357,7 @@ void execute_b_cond(uint32_t instruction)
     int cond = instruction & 0xF;
     int imm19 = (instruction >> 5) & 0x7FFFF;
 
-    int64_t offset = sign_extend(imm19 << 2, 21) * 4;
+    int64_t offset = sign_extend(imm19 << 2, 21);
 
     // Verifica la condición unicamente para BEQ, BNE, BGT, BLT, BGE, BLE
     switch (cond) {
@@ -366,34 +366,41 @@ void execute_b_cond(uint32_t instruction)
                 printf("Cond: BEQ");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
+            break;
         case 0x1:  // BNE
             if (!CURRENT_STATE.FLAG_Z) {
                 printf("Cond: BNE");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
+            break;
         case 0xC:  // BGT
-            if (!CURRENT_STATE.FLAG_Z && CURRENT_STATE.FLAG_N) {
+            if (!CURRENT_STATE.FLAG_Z && !CURRENT_STATE.FLAG_N) {       // asumimos flag V=0 por enunciado.
                 printf("Cond: BGT");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
+            break;
         case 0xB:  // BLT
-            if (!CURRENT_STATE.FLAG_N) {
+            if (CURRENT_STATE.FLAG_N) {                                 // asumimos flag V=0 por enunciado.
                 printf("Cond: BLT");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
+            break;
         case 0xA:  // BGE
-            if (CURRENT_STATE.FLAG_N;) {
-                printf("Cond: BGE")
+            if (!CURRENT_STATE.FLAG_N) {                                // asumimos flag V=0 por enunciado.
+                printf("Cond: BGE");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
+            break;
         case 0xD:  // BLE
-            if (!(!CURRENT_STATE.FLAG_Z && CURRENT_STATE.FLAG_N)) {
-                printf("Cond: BLE")
+            if (!(!CURRENT_STATE.FLAG_Z && !CURRENT_STATE.FLAG_N)) {    // asumimos flag V=0 por enunciado.
+                printf("Cond: BLE");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
+            break;
         default:
-            printf("No hay tal cond")
+            printf("No hay tal cond");
             NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+            break;
         }
 }
 
