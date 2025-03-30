@@ -15,8 +15,8 @@
 #define OPCODE_EOR      0x650  // EOR (shifted register)
 #define OPCODE_ORR      0x550  // ORR (shifted register)
 #define OPCODE_B        0x5    // B.
-#define OPCODE_BR       0x6B0 // BR
-#define OPCODE_BCOND   0x54   // B.COND.
+#define OPCODE_BR       0x6B0  // BR
+#define OPCODE_BCOND    0x54   // B.COND.
 #define OPCODE_LSL      0x69B  // LSL (immediate)
 #define OPCODE_LSR      0x69A  // LSR (immediate)
 #define OPCODE_STUR     0x7C0  // STUR
@@ -44,9 +44,9 @@ void execute_subis_1(uint32_t instruction);
 void execute_ands(uint32_t instruction);
 void execute_eor(uint32_t instruction);
 void execute_orr(uint32_t instruction);
-// void execute_b(uint32_t instruction);
-// void execute_br(uint32_t instruction);
-// void execute_b_cond(uint32_t instruction);
+void execute_b(uint32_t instruction);
+void execute_br(uint32_t instruction);
+void execute_b_cond(uint32_t instruction);
 void execute_lsl(uint32_t instruction);
 void execute_lsr(uint32_t instruction);
 void execute_stur(uint32_t instruction);
