@@ -325,7 +325,7 @@ void execute_orr(uint32_t instruction)
 }
 
 int64_t sign_extend(int32_t value, int bits) {
-    int64_t mask = 1LL << (bits - 1);
+    int64_t mask = (int64_t)1 << (bits - 1);
     return (int64_t)(value ^ mask) - mask;
 }
 
@@ -363,26 +363,26 @@ void execute_b_cond(uint32_t instruction)
     switch (cond) {
         case 0x0: // BEQ
             if (CURRENT_STATE.FLAG_Z) {
-                printf("Cond: BEQ")
+                printf("Cond: BEQ");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
         case 0x1:  // BNE
             if (!CURRENT_STATE.FLAG_Z) {
-                printf("Cond: BNE")
+                printf("Cond: BNE");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
         case 0xC:  // BGT
             if (!CURRENT_STATE.FLAG_Z && CURRENT_STATE.FLAG_N) {
-                printf("Cond: BGT")
+                printf("Cond: BGT");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
         case 0xB:  // BLT
             if (!CURRENT_STATE.FLAG_N) {
-                printf("Cond: BLT")
+                printf("Cond: BLT");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
         case 0xA:  // BGE
-            if (CURRENT_STATE.FLAG_N) {
+            if (CURRENT_STATE.FLAG_N;) {
                 printf("Cond: BGE")
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
