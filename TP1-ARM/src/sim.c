@@ -16,9 +16,9 @@
 #define OPCODE_ORR      0x550  // ORR (shifted register)
 #define OPCODE_B        0x5    // B.
 #define OPCODE_BR       0x6B0 // BR
-// #define OPCODE_B.COND   0x54   // B.COND. REVISAR --> OK según piter
+#define OPCODE_BCOND   0x54   // B.COND.
 #define OPCODE_LSL      0x69B  // LSL (immediate)
-#define OPCODE_LSR      0x69A  // LSR (immediate) --> Según piter.
+#define OPCODE_LSR      0x69A  // LSR (immediate)
 #define OPCODE_STUR     0x7C0  // STUR
 #define OPCODE_STURB    0x1C0  // STURB
 #define OPCODE_STURH    0x3C0  // STURH
@@ -94,6 +94,10 @@ void process_instruction()
         case OPCODE_CBNZ:
             printf("CBNZ\n");
             execute_cbnz(instruction);
+            return;
+        case OPCODE_BCOND:
+            printf("B.COND\n");
+            execute_b_cond(instruction);
             return;
     }
 
@@ -330,7 +334,11 @@ void execute_b(uint32_t instruction)
     int imm26 = instruction & 0x3FFFFFF;
     int64_t offset = sign_extend(imm26 << 2, 28) * 4;
 
-    NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+    if (instruction != 31) {
+        NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+    } else {
+        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    }
 }
 
 void execute_br(uint32_t instruction)
@@ -339,10 +347,48 @@ void execute_br(uint32_t instruction)
 
     if (rn != 31) {
         NEXT_STATE.PC = CURRENT_STATE.REGS[rn];
+    } else {
+        NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     }
 }
 
-// EXECUTE_B_COND
+void execute_b_cond(uint32_t instruction)
+{
+    int cond = instruction & 0xF;
+    int imm19 = (instruction >> 5) & 0x7FFFF;
+
+    int64_t offset = sign_extend(imm19 << 2, 21) * 4;
+
+    // Verifica la condición unicamente para BEQ, BNE, BGT, BLT, BGE, BLE
+    switch (cond) {
+        case 0x0: // BEQ
+            if (CURRENT_STATE.FLAG_Z) {
+                NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+            }
+        case 0x1:  // BNE
+            if (!CURRENT_STATE.FLAG_Z) {
+                NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+            }
+        case 0xC:  // BGT
+            if (!CURRENT_STATE.FLAG_Z && CURRENT_STATE.FLAG_N) {
+                NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+            }
+        case 0xB:  // BLT
+            if (!CURRENT_STATE.FLAG_N) {
+                NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+            }
+        case 0xA:  // BGE
+            if (CURRENT_STATE.FLAG_N) {
+                NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+            }
+        case 0xD:  // BLE
+            if (!(!CURRENT_STATE.FLAG_Z && CURRENT_STATE.FLAG_N)) {
+                NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+            }
+        default:
+            NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+        }
+}
 
 void execute_lsl(uint32_t instruction)
 {
