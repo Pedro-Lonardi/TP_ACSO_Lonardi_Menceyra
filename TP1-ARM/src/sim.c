@@ -14,7 +14,7 @@
 #define OPCODE_ANDS     0x750  // ANDS (shifted register)
 #define OPCODE_EOR      0x650  // EOR (shifted register)
 #define OPCODE_ORR      0x550  // ORR (shifted register)
-// #define OPCODE_B        0x5    // B. REVISAR --> OK según piter (raro igual)
+#define OPCODE_B        0x5    // B. REVISAR --> OK según piter (raro igual)
 // #define OPCODE_BR       0x___ // BR. REVISAR
 // #define OPCODE_BR       0x6B0 // Según piter.
 // #define OPCODE_B.COND   0x54   // B.COND. REVISAR --> OK según piter
@@ -79,6 +79,13 @@ void process_instruction()
     printf("Opcode 11 bits: 0x%x\n", opcode_11);
 
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+
+    switch (opcode_6) {
+        case OPCODE_B:
+            printf("B\n");
+            execute_b(instruction);
+            return;
+    }
 
     switch (opcode_8) {
         case OPCODE_CBZ:
@@ -310,7 +317,19 @@ void execute_orr(uint32_t instruction)
     }
 }
 
-// EXECUTE_B
+int64_t sign_extend(int32_t value, int bits) {
+    int64_t mask = (int64_t)1 << (bits - 1);
+    return (int64_t)(value ^ mask) - mask;
+}
+
+void execute_b(uint32_t instruction)
+{
+    int imm26 = instruction & 0x3FFFFFF;
+    int64_t offset = sign_extend(imm26, 26) * 4;
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + offset;
+}
+
 // EXECUTE_BR
 // EXECUTE_B_COND
 
