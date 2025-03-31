@@ -70,76 +70,72 @@ void process_instruction()
     printf("Instrucción: 0x%x\n", instruction);
 
     // Defino la recuperación de bits para diferentes tamaños de opcode
+    uint32_t opcode_11 = (instruction >> 21) & 0x7FF;
     uint32_t opcode_6 = (instruction >> 26) & 0x3F;
     uint32_t opcode_8 = (instruction >> 24) & 0x7F;
-    uint32_t opcode_11 = (instruction >> 21) & 0x7FF;
+    printf("Opcode 11 bits: 0x%x\n", opcode_11);
     printf("Opcode 6 bits: 0x%x\n", opcode_6);
     printf("Opcode 8 bits: 0x%x\n", opcode_8);
-    printf("Opcode 11 bits: 0x%x\n", opcode_11);
 
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     
-        switch(opcode_11) {
-            case OPCODE_HLT:
-                execute_hlt(instruction);
-                break;
-            case OPCODE_ADDS:
-                printf("ADDS\n");
-                execute_adds(instruction);
-                break;
-            case OPCODE_ADDIS_0:
-                printf("ADDIS (SHIFT=000)\n");
-                execute_addis_0(instruction);
-                break;
-            case OPCODE_ADDIS_1:
-                printf("ADDIS (SHIFT=010)\n");
-                execute_addis_1(instruction);
-                break;
-            case OPCODE_SUBS:
-                printf("SUBS\n");
-                execute_subs(instruction);
-                break;
-            case OPCODE_SUBIS_0:
-                printf("SUBIS (SHIFT=000)\n");
-                execute_subis_0(instruction);
-                break;
-            case OPCODE_SUBIS_1:
-                printf("SUBIS (SHIFT=010)\n");
-                execute_subis_1(instruction);
-                break;
-            case OPCODE_ANDS:
-                printf("ANDS\n");
-                execute_ands(instruction);
-                break;
-            case OPCODE_EOR:
-                printf("EOR\n");
-                execute_eor(instruction);
-                break;
-            case OPCODE_ORR:
-                printf("ORR\n");
-                execute_orr(instruction);
-                break;
-            case OPCODE_LSL:
-                printf("LSL\n");
-                execute_lsl(instruction);
-                break;
-            case OPCODE_LSR:
-                printf("LSR\n");
-                execute_lsr(instruction);
-                break;
-            case OPCODE_MOVZ:
-                printf("MOVZ\n");
-                execute_movz(instruction);
-                break;
-            case OPCODE_BR:
-                printf("BR\n");
-                execute_br(instruction);
-                break;
-            default:
-                printf("Instrucción 0x%x no reconocida\n", instruction);
-                RUN_BIT = 0;
-                break;
-        }
+    switch(opcode_11) {
+        case OPCODE_HLT:
+            execute_hlt(instruction);
+            return;
+        case OPCODE_ADDS:
+            printf("ADDS\n");
+            execute_adds(instruction);
+            return;
+        case OPCODE_ADDIS_0:
+            printf("ADDIS (SHIFT=000)\n");
+            execute_addis_0(instruction);
+            return;
+        case OPCODE_ADDIS_1:
+            printf("ADDIS (SHIFT=010)\n");
+            execute_addis_1(instruction);
+            return;
+        case OPCODE_SUBS:
+            printf("SUBS\n");
+            execute_subs(instruction);
+            return;
+        case OPCODE_SUBIS_0:
+            printf("SUBIS (SHIFT=000)\n");
+            execute_subis_0(instruction);
+            return;
+        case OPCODE_SUBIS_1:
+            printf("SUBIS (SHIFT=010)\n");
+            execute_subis_1(instruction);
+            return;
+        case OPCODE_ANDS:
+            printf("ANDS\n");
+            execute_ands(instruction);
+            return;
+        case OPCODE_EOR:
+            printf("EOR\n");
+            execute_eor(instruction);
+            return;
+        case OPCODE_ORR:
+            printf("ORR\n");
+            execute_orr(instruction);
+            return;
+        case OPCODE_LSL:
+            printf("LSL\n");
+            execute_lsl(instruction);
+            return;
+        case OPCODE_LSR:
+            printf("LSR\n");
+            execute_lsr(instruction);
+            return;
+        case OPCODE_MOVZ:
+            printf("MOVZ\n");
+            execute_movz(instruction);
+            return;
+        case OPCODE_BR:
+            printf("BR\n");
+            execute_br(instruction);
+            return;
+    }
 
     switch (opcode_6) {
         case OPCODE_B:
@@ -152,15 +148,19 @@ void process_instruction()
         case OPCODE_CBZ:
             printf("CBZ\n");
             execute_cbz(instruction);
-            return;
+            break;
         case OPCODE_CBNZ:
             printf("CBNZ\n");
             execute_cbnz(instruction);
-            return;
+            break;
         case OPCODE_BCOND:
             printf("B.COND\n");
             execute_b_cond(instruction);
-            return;
+            break;
+        default:
+            printf("Instrucción 0x%x no reconocida\n", instruction);
+            RUN_BIT = 0;
+            break;
     }
 }
 
