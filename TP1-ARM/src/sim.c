@@ -168,7 +168,6 @@ void execute_hlt(uint32_t instruction)
 {
     printf("HLT\n");
     RUN_BIT = 0;
-    break;
 }
 
 void execute_adds(uint32_t instruction)
