@@ -222,7 +222,7 @@ void execute_addis_1(uint32_t instruction)
     }
 }
 
-void execute_subs(uint32_t instruction) // REVISAR CASO DE CMP
+void execute_subs(uint32_t instruction)
 {
     int rd = instruction & 0x1F;
     int rn = (instruction >> 5) & 0x1F;
@@ -240,7 +240,7 @@ void execute_subs(uint32_t instruction) // REVISAR CASO DE CMP
     }
 }
 
-void execute_subis_0(uint32_t instruction)  // REVISAR CASO DE CMPI
+void execute_subis_0(uint32_t instruction)
 {
     int rd = instruction & 0x1F;
     int rn = (instruction >> 5) & 0x1F;
@@ -257,7 +257,7 @@ void execute_subis_0(uint32_t instruction)  // REVISAR CASO DE CMPI
     }
 }
 
-void execute_subis_1(uint32_t instruction) // REVISAR CASO DE CMPI
+void execute_subis_1(uint32_t instruction)
 {
     int rd = instruction & 0x1F;
     int rn = (instruction >> 5) & 0x1F;
@@ -445,7 +445,20 @@ void execute_lsr(uint32_t instruction)
 // EXECUTE_STUR
 // EXECUTE_STURB
 // EXECUTE_STURH
-// EXECUTE_LDUR
+void execute_ldur(uint32_t instruction) {
+    int rt = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int imm9 = (instruction >> 12) & 0x1FF;
+    imm9 = (imm9 << 23) >> 23;
+
+    uint64_t addr = CURRENT_STATE.REGS[rn] + imm9;
+
+    uint64_t start = mem_read_32(addr);
+    uint64_t end = mem_read_32(addr + 4);
+    NEXT_STATE.REGS[rt] = (end << 32) | start;
+    
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
 // EXECUTE_LDURB
 // EXECUTE_LDURH
 
