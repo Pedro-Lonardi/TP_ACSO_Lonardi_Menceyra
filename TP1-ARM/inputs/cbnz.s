@@ -22,3 +22,4 @@ loop_start:
     mul  X9, X7, X8      // Multiplica X7 * X8 y guarda el resultado en X9
 
     hlt  0
+    
