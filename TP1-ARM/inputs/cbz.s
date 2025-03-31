@@ -1,3 +1,4 @@
+.text
 movz x0, #10
 
 loop_start:
