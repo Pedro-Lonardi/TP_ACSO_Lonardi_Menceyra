@@ -14,9 +14,9 @@
 #define OPCODE_ANDS     0x750  // ANDS (shifted register)
 #define OPCODE_EOR      0x650  // EOR (shifted register)
 #define OPCODE_ORR      0x550  // ORR (shifted register)
-#define OPCODE_B        0x5    // B.
+#define OPCODE_B        0x5    // B
 #define OPCODE_BR       0x6B0  // BR
-#define OPCODE_BCOND    0x54   // B.COND.
+#define OPCODE_BCOND    0x54   // B.COND
 #define OPCODE_LSL      0x69B  // LSL (immediate)
 #define OPCODE_LSR      0x69A  // LSR (immediate)
 #define OPCODE_STUR     0x7C0  // STUR
@@ -77,7 +77,7 @@ void process_instruction()
     printf("Opcode 8 bits: 0x%x\n", opcode_8);
     printf("Opcode 11 bits: 0x%x\n", opcode_11);
 
-    // NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 
     switch (opcode_6) {
         case OPCODE_B:
