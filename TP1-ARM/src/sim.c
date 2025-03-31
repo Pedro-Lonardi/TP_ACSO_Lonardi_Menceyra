@@ -133,6 +133,30 @@ void process_instruction()
             printf("BR\n");
             execute_br(instruction);
             return;
+        case OPCODE_STUR:
+            printf("STUR\n");
+            execute_stur(instruction);
+            return;
+        case OPCODE_STURB:
+            printf("STURB\n");
+            execute_sturb(instruction);
+            return;
+        case OPCODE_STURH:
+            printf("STURH\n");
+            execute_sturh(instruction);
+            return;
+        case OPCODE_LDUR:
+            printf("LDUR\n");
+            execute_ldur(instruction);
+            return;
+        case OPCODE_LDURB:
+            printf("LDURB\n");
+            execute_ldurb(instruction);
+            return;
+        case OPCODE_LDURH:
+            printf("LDURH\n");
+            execute_ldurh(instruction);
+            return;
     }
 
     switch (opcode_6) {
