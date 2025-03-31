@@ -76,8 +76,6 @@ void process_instruction()
     printf("Opcode 11 bits: 0x%x\n", opcode_11);
     printf("Opcode 6 bits: 0x%x\n", opcode_6);
     printf("Opcode 8 bits: 0x%x\n", opcode_8);
-
-    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     
     switch(opcode_11) {
         case OPCODE_HLT:
@@ -168,6 +166,7 @@ void execute_hlt(uint32_t instruction)
 {
     printf("HLT\n");
     RUN_BIT = 0;
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_adds(uint32_t instruction)
@@ -186,6 +185,8 @@ void execute_adds(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+    
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_addis_0(uint32_t instruction)
@@ -203,6 +204,8 @@ void execute_addis_0(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_addis_1(uint32_t instruction)
@@ -220,6 +223,8 @@ void execute_addis_1(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_subs(uint32_t instruction)
@@ -238,6 +243,8 @@ void execute_subs(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_subis_0(uint32_t instruction)
@@ -255,6 +262,8 @@ void execute_subis_0(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_subis_1(uint32_t instruction)
@@ -272,6 +281,8 @@ void execute_subis_1(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_ands(uint32_t instruction)
@@ -290,6 +301,8 @@ void execute_ands(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_eor(uint32_t instruction)
@@ -305,6 +318,8 @@ void execute_eor(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_orr(uint32_t instruction)
@@ -323,6 +338,8 @@ void execute_orr(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 int64_t sign_extend(int32_t value, int bits) {
@@ -340,6 +357,8 @@ void execute_b(uint32_t instruction)
     } else {
         NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_br(uint32_t instruction)
@@ -351,6 +370,8 @@ void execute_br(uint32_t instruction)
     } else {
         NEXT_STATE.PC = CURRENT_STATE.PC + 4;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_b_cond(uint32_t instruction)
@@ -399,7 +420,7 @@ void execute_b_cond(uint32_t instruction)
             }
             break;
         default:
-            printf("No hay tal cond\n");
+            printf("No cumple ninguna condición\n");
             NEXT_STATE.PC = CURRENT_STATE.PC + 4;
             break;
         }
@@ -422,6 +443,8 @@ void execute_lsl(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 
@@ -440,6 +463,8 @@ void execute_lsr(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 // EXECUTE_STUR
@@ -466,7 +491,7 @@ void execute_sturb(uint32_t instruction) {
     uint64_t addr = CURRENT_STATE.REGS[rn] + imm9;
 
     uint32_t data = CURRENT_STATE.REGS[rt] & 0xFF;
-    mem_write_8(addr, data);
+    mem_write_32(addr, data);
 
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
@@ -539,6 +564,8 @@ void execute_movz(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = imm;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_add(uint32_t instruction)
@@ -554,6 +581,8 @@ void execute_add(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_mul(uint32_t instruction)
@@ -569,6 +598,8 @@ void execute_mul(uint32_t instruction)
     if (rd != 31) {
         NEXT_STATE.REGS[rd] = result;
     }
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 
 void execute_cbz(uint32_t instruction)
