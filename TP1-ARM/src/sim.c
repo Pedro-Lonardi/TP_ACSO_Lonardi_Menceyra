@@ -443,8 +443,49 @@ void execute_lsr(uint32_t instruction)
 }
 
 // EXECUTE_STUR
+void execute_stur(uint32_t instruction) {
+    int rt = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int imm9 = (instruction >> 12) & 0x1FF;
+    imm9 = (imm9 << 23) >> 23;
+
+    uint64_t addr = CURRENT_STATE.REGS[rn] + imm9;
+
+    mem_write_32(addr, (uint32_t)CURRENT_STATE.REGS[rt] & 0xFFFFFFFF);
+    mem_write_32(addr + 4, (uint32_t)(CURRENT_STATE.REGS[rt] >> 32));
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
 // EXECUTE_STURB
+void execute_sturb(uint32_t instruction) {
+    int rt = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int imm9 = (instruction >> 12) & 0x1FF;
+    imm9 = (imm9 << 23) >> 23;
+
+    uint64_t addr = CURRENT_STATE.REGS[rn] + imm9;
+
+    uint32_t data = CURRENT_STATE.REGS[rt] & 0xFF;
+    mem_write_8(addr, data);
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
 // EXECUTE_STURH
+void execute_sturh(uint32_t instruction) {
+    int rt = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int imm9 = (instruction >> 12) & 0x1FF;
+    imm9 = (imm9 << 23) >> 23;
+
+    uint64_t addr = CURRENT_STATE.REGS[rn] + imm9;
+    uint64_t half = CURRENT_STATE.REGS[rt] & 0xFFFF;
+
+    uint32_t value = mem_read_32(addr);
+    value = (value & 0xFFFF0000) | half;
+    mem_write_32(addr, value);
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
 void execute_ldur(uint32_t instruction) {
     int rt = instruction & 0x1F;
     int rn = (instruction >> 5) & 0x1F;
@@ -460,7 +501,35 @@ void execute_ldur(uint32_t instruction) {
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
 }
 // EXECUTE_LDURB
+void execute_ldurb(uint32_t instruction) {
+    int rt = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int imm9 = (instruction >> 12) & 0x1FF;
+    imm9 = (imm9 << 23) >> 23;
+
+    uint64_t addr = CURRENT_STATE.REGS[rn] + imm9;
+    uint64_t word = mem_read_32(addr & ~0x3);
+    uint8_t byte = (word >> ((addr & 0x3) * 8)) & 0xFF;
+
+    NEXT_STATE.REGS[rt] = (uint64_t)byte;
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
 // EXECUTE_LDURH
+void execute_ldurh(uint32_t instruction) {
+    int rt = instruction & 0x1F;
+    int rn = (instruction >> 5) & 0x1F;
+    int imm9 = (instruction >> 12) & 0x1FF;
+    imm9 = (imm9 << 23) >> 23;
+
+    uint64_t addr = CURRENT_STATE.REGS[rn] + imm9;
+    uint64_t word = mem_read_32(addr & ~0x3);
+    uint16_t half = (word >> ((addr & 0x3) * 8)) & 0xFFFF;
+
+    NEXT_STATE.REGS[rt] = (uint64_t)half;
+
+    NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+}
 
 void execute_movz(uint32_t instruction)
 {
