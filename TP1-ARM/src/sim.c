@@ -78,6 +78,68 @@ void process_instruction()
     printf("Opcode 11 bits: 0x%x\n", opcode_11);
 
     NEXT_STATE.PC = CURRENT_STATE.PC + 4;
+    
+        switch(opcode_11) {
+            case OPCODE_HLT:
+                execute_hlt(instruction);
+                break;
+            case OPCODE_ADDS:
+                printf("ADDS\n");
+                execute_adds(instruction);
+                break;
+            case OPCODE_ADDIS_0:
+                printf("ADDIS (SHIFT=000)\n");
+                execute_addis_0(instruction);
+                break;
+            case OPCODE_ADDIS_1:
+                printf("ADDIS (SHIFT=010)\n");
+                execute_addis_1(instruction);
+                break;
+            case OPCODE_SUBS:
+                printf("SUBS\n");
+                execute_subs(instruction);
+                break;
+            case OPCODE_SUBIS_0:
+                printf("SUBIS (SHIFT=000)\n");
+                execute_subis_0(instruction);
+                break;
+            case OPCODE_SUBIS_1:
+                printf("SUBIS (SHIFT=010)\n");
+                execute_subis_1(instruction);
+                break;
+            case OPCODE_ANDS:
+                printf("ANDS\n");
+                execute_ands(instruction);
+                break;
+            case OPCODE_EOR:
+                printf("EOR\n");
+                execute_eor(instruction);
+                break;
+            case OPCODE_ORR:
+                printf("ORR\n");
+                execute_orr(instruction);
+                break;
+            case OPCODE_LSL:
+                printf("LSL\n");
+                execute_lsl(instruction);
+                break;
+            case OPCODE_LSR:
+                printf("LSR\n");
+                execute_lsr(instruction);
+                break;
+            case OPCODE_MOVZ:
+                printf("MOVZ\n");
+                execute_movz(instruction);
+                break;
+            case OPCODE_BR:
+                printf("BR\n");
+                execute_br(instruction);
+                break;
+            default:
+                printf("Instrucción 0x%x no reconocida\n", instruction);
+                RUN_BIT = 0;
+                break;
+        }
 
     switch (opcode_6) {
         case OPCODE_B:
@@ -99,68 +161,6 @@ void process_instruction()
             printf("B.COND\n");
             execute_b_cond(instruction);
             return;
-    }
-
-    switch(opcode_11) {
-        case OPCODE_HLT:
-            execute_hlt(instruction);
-            break;
-        case OPCODE_ADDS:
-            printf("ADDS\n");
-            execute_adds(instruction);
-            break;
-        case OPCODE_ADDIS_0:
-            printf("ADDIS (SHIFT=000)\n");
-            execute_addis_0(instruction);
-            break;
-        case OPCODE_ADDIS_1:
-            printf("ADDIS (SHIFT=010)\n");
-            execute_addis_1(instruction);
-            break;
-        case OPCODE_SUBS:
-            printf("SUBS\n");
-            execute_subs(instruction);
-            break;
-        case OPCODE_SUBIS_0:
-            printf("SUBIS (SHIFT=000)\n");
-            execute_subis_0(instruction);
-            break;
-        case OPCODE_SUBIS_1:
-            printf("SUBIS (SHIFT=010)\n");
-            execute_subis_1(instruction);
-            break;
-        case OPCODE_ANDS:
-            printf("ANDS\n");
-            execute_ands(instruction);
-            break;
-        case OPCODE_EOR:
-            printf("EOR\n");
-            execute_eor(instruction);
-            break;
-        case OPCODE_ORR:
-            printf("ORR\n");
-            execute_orr(instruction);
-            break;
-        case OPCODE_LSL:
-            printf("LSL\n");
-            execute_lsl(instruction);
-            break;
-        case OPCODE_LSR:
-            printf("LSR\n");
-            execute_lsr(instruction);
-            break;
-        case OPCODE_MOVZ:
-            printf("MOVZ\n");
-            execute_movz(instruction);
-            break;
-        case OPCODE_BR:
-            printf("BR\n");
-            execute_br(instruction);
-            break;
-        default:
-            printf("Instrucción 0x%x no reconocida\n", instruction);
-            RUN_BIT = 0;
-            break;
     }
 }
 
@@ -364,42 +364,42 @@ void execute_b_cond(uint32_t instruction)
     switch (cond) {
         case 0x0: // BEQ
             if (CURRENT_STATE.FLAG_Z) {
-                printf("Cond: BEQ");
+                printf("Cond: BEQ\n");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
             break;
         case 0x1:  // BNE
             if (!CURRENT_STATE.FLAG_Z) {
-                printf("Cond: BNE");
+                printf("Cond: BNE\n");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
             break;
         case 0xC:  // BGT
             if (!CURRENT_STATE.FLAG_Z && !CURRENT_STATE.FLAG_N) {       // asumimos flag V=0 por enunciado.
-                printf("Cond: BGT");
+                printf("Cond: BGT\n");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
             break;
         case 0xB:  // BLT
             if (CURRENT_STATE.FLAG_N) {                                 // asumimos flag V=0 por enunciado.
-                printf("Cond: BLT");
+                printf("Cond: BLT\n");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
             break;
         case 0xA:  // BGE
             if (!CURRENT_STATE.FLAG_N) {                                // asumimos flag V=0 por enunciado.
-                printf("Cond: BGE");
+                printf("Cond: BGE\n");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
             break;
         case 0xD:  // BLE
             if (!(!CURRENT_STATE.FLAG_Z && !CURRENT_STATE.FLAG_N)) {    // asumimos flag V=0 por enunciado.
-                printf("Cond: BLE");
+                printf("Cond: BLE\n");
                 NEXT_STATE.PC = CURRENT_STATE.PC + offset;
             }
             break;
         default:
-            printf("No hay tal cond");
+            printf("No hay tal cond\n");
             NEXT_STATE.PC = CURRENT_STATE.PC + 4;
             break;
         }
