@@ -49,7 +49,7 @@ char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash)
 	while(current_node != NULL){
 		if(current_node->type == type){
 			if(result == NULL){
-				result = strdup(hash);
+				result = str_concat(current_node->hash, hash);
 			}else{
 				char* temp = str_concat(result, current_node->hash);
 				free(result);
