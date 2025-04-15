@@ -8,6 +8,7 @@ string_proc_list* string_proc_list_create(void){
 	}
 	list->first = NULL;
 	list->last  = NULL;
+	return list;
 }
 
 string_proc_node* string_proc_node_create(uint8_t type, char* hash){
@@ -48,7 +49,7 @@ char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash)
 	while(current_node != NULL){
 		if(current_node->type == type){
 			if(result == NULL){
-				result = str_concat(current_node->hash, hash);
+				result = strdup(hash);
 			}else{
 				char* temp = str_concat(result, current_node->hash);
 				free(result);
