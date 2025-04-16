@@ -13,119 +13,194 @@ global string_proc_list_add_node_asm
 global string_proc_list_concat_asm
 
 extern strdup
-extern malloc
+extern malloc, fprintf, stderr
 extern free
 extern str_concat
 
 string_proc_list_create_asm:
-    mov rdi, 16             ; sizeof(string_proc_list) = 16 bytes
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $16, %rsp          # Reservar espacio en la pila
+
+    # Llamar a malloc(sizeof(string_proc_list)) = 16 bytes
+    movq $16, %rdi          # Argumento: tamaño = 16
     call malloc
-    test rax, rax
-    je .error
-    mov qword [rax], 0      ; list->first = NULL
-    mov qword [rax + 8], 0  ; list->last = NULL
+    movq %rax, -8(%rbp)     # Guardar puntero retornado en variable local
+
+    # Verificar si malloc retornó NULL
+    cmpq $0, %rax
+    jne .init_list
+    # Error: Imprimir mensaje
+    movq stderr(%rip), %rdi # Primer argumento: stderr
+    leaq .error_msg(%rip), %rsi # Segundo argumento: mensaje
+    call fprintf
+    movq $0, %rax           # Retornar NULL
+    jmp .return
+
+.init_list:
+    # Inicializar list->first = NULL
+    movq $0, (%rax)
+    # Inicializar list->last = NULL
+    movq $0, 8(%rax)
+
+.return:
+    movq -8(%rbp), %rax     # Retornar puntero a la lista
+    leave
     ret
-.error:
-    xor rax, rax
-    ret
+
+.section .rodata
+.error_msg:
+    .string "Error: No se pudo crear la lista\n"
 
 string_proc_node_create_asm:
-    push rbx
-    push r12
-    mov rbx, rsi            ; Guardar hash en rbx
-    mov r12, rdi            ; Guardar type en r12
-    mov rdi, 32             ; malloc(32) para string_proc_node
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $16, %rsp          # Reservar espacio en la pila
+    movb %dil, -9(%rbp)     # Guardar type (uint8_t) en la pila
+    movq %rsi, -8(%rbp)     # Guardar hash (char*) en la pila
+
+    # Llamar a malloc(sizeof(string_proc_node)) = 32 bytes
+    movq $32, %rdi          # Argumento: tamaño = 32
     call malloc
-    test rax, rax
-    je .error
-    mov r8, rax             ; r8 = puntero al nodo
-    mov byte [r8], r12b     ; node->type = type
-    mov rdi, rbx            ; hash para strdup
-    call strdup
-    test rax, rax
-    je .free_node
-    mov qword [r8 + 8], rax ; node->hash = strdup(hash)
-    mov qword [r8 + 16], 0  ; node->next = NULL
-    mov qword [r8 + 24], 0  ; node->previous = NULL
-    mov rax, r8             ; Retornar puntero al nodo
-    pop r12
-    pop rbx
+    movq %rax, -16(%rbp)    # Guardar puntero retornado
+
+    # Verificar si malloc retornó NULL
+    cmpq $0, %rax
+    jne .init_node
+    # Error: Imprimir mensaje
+    movq stderr(%rip), %rdi
+    leaq .error_msg(%rip), %rsi
+    call fprintf
+    movq $0, %rax           # Retornar NULL
+    jmp .return
+
+.init_node:
+    # Inicializar node->next = NULL
+    movq $0, (%rax)
+    # Inicializar node->previous = NULL
+    movq $0, 8(%rax)
+    # Inicializar node->type = type
+    movb -9(%rbp), %cl
+    movb %cl, 16(%rax)
+    # Inicializar node->hash = hash
+    movq -8(%rbp), %rcx
+    movq %rcx, 24(%rax)
+
+.return:
+    movq -16(%rbp), %rax    # Retornar puntero al nodo
+    leave
     ret
-.free_node:
-    mov rdi, r8             ; Liberar nodo
-    call free
-.error:
-    xor rax, rax
-    pop r12
-    pop rbx
-    ret
+
+.section .rodata
+.error_msg:
+    .string "Error: No se pudo crear el nodo\n"
 
 string_proc_list_add_node_asm:
-    push rbx
-    test rdi, rdi           ; Verificar si list es NULL
-    je .done
-    mov rbx, rdi            ; Guardar list en rbx
-    mov rdi, rsi            ; type
-    mov rsi, rdx            ; hash
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $32, %rsp          # Reservar espacio en la pila
+    movq %rdi, -8(%rbp)     # Guardar list
+    movb %sil, -9(%rbp)     # Guardar type
+    movq %rdx, -16(%rbp)    # Guardar hash
+
+    # Llamar a string_proc_node_create_asm(type, hash)
+    movb -9(%rbp), %dil
+    movq -16(%rbp), %rsi
     call string_proc_node_create_asm
-    test rax, rax
-    je .done
-    mov rcx, [rbx]          ; list->first
-    test rcx, rcx
-    je .empty_list
-    mov rcx, [rbx + 8]      ; list->last
-    mov [rcx + 16], rax     ; last->next = node
-    mov [rax + 24], rcx     ; node->prev = last
-    mov [rbx + 8], rax      ; list->last = node
-    jmp .done
-.empty_list:
-    mov [rbx], rax          ; list->first = node
-    mov [rbx + 8], rax      ; list->last = node
-.done:
-    pop rbx
+    movq %rax, -24(%rbp)    # Guardar puntero al nodo
+
+    # Verificar si node es NULL
+    cmpq $0, %rax
+    jne .check_list
+    # Error: Imprimir mensaje
+    movq stderr(%rip), %rdi
+    leaq .error_msg(%rip), %rsi
+    call fprintf
+    jmp .return
+
+.check_list:
+    # Verificar si list->first es NULL
+    movq -8(%rbp), %rax     # rax = list
+    movq (%rax), %rcx       # rcx = list->first
+    cmpq $0, %rcx
+    jne .add_to_end
+
+    # Lista vacía: list->first = node, list->last = node
+    movq -24(%rbp), %rcx    # rcx = node
+    movq %rcx, (%rax)       # list->first = node
+    movq %rcx, 8(%rax)      # list->last = node
+    jmp .return
+
+.add_to_end:
+    # Lista no vacía: list->last->next = node
+    movq 8(%rax), %rcx      # rcx = list->last
+    movq -24(%rbp), %rdx    # rdx = node
+    movq %rdx, (%rcx)       # list->last->next = node
+    # node->previous = list->last
+    movq 8(%rax), %rcx      # rcx = list->last
+    movq %rcx, 8(%rdx)      # node->previous = list->last
+    # list->last = node
+    movq -24(%rbp), %rcx
+    movq %rcx, 8(%rax)      # list->last = node
+
+.return:
+    leave
     ret
 
+.section .rodata
+.error_msg:
+    .string "Error: No se pudo crear el nodo\n"
+
 string_proc_list_concat_asm:
-    push rbx
-    push r12
-    test rdi, rdi           ; Verificar si list es NULL
-    je .return_empty
-    mov rbx, [rdi]          ; list->first
-    test rbx, rbx           ; Verificar si list->first es NULL
-    je .return_empty
-    mov rdi, rdx            ; hash
+    pushq %rbp
+    movq %rsp, %rbp
+    subq $32, %rsp          # Reservar espacio en la pila
+    movq %rdi, -8(%rbp)     # Guardar list
+    movb %sil, -9(%rbp)     # Guardar type
+    movq %rdx, -16(%rbp)    # Guardar hash
+
+    # Llamar a strdup(hash)
+    movq %rdx, %rdi
     call strdup
-    test rax, rax           ; Verificar si strdup falla
-    je .return_null
-    mov r12, rax            ; result = r12
+    movq %rax, -24(%rbp)    # Guardar result
+
+    # Obtener current_node = list->first
+    movq -8(%rbp), %rax
+    movq (%rax), %rax       # rax = list->first
+    movq %rax, -32(%rbp)    # Guardar current_node
+
 .loop:
-    test rbx, rbx
-    je .done
-    movzx eax, byte [rbx]   ; node->type
-    cmp al, sil
-    jne .next
-    mov rdi, r12            ; result
-    mov rsi, [rbx + 8]      ; node->hash
+    # Verificar si current_node es NULL
+    movq -32(%rbp), %rax
+    cmpq $0, %rax
+    je .return
+
+    # Verificar si current_node->type == type
+    movb 16(%rax), %cl      # cl = current_node->type
+    cmpb -9(%rbp), %cl
+    jne .next_node
+
+    # Llamar a str_concat(result, current_node->hash)
+    movq -24(%rbp), %rdi    # Primer argumento: result
+    movq 24(%rax), %rsi     # Segundo argumento: current_node->hash
     call str_concat
-    mov rdi, r12            ; Liberar result anterior
+    movq %rax, %rbx         # Guardar temp en rbx (callee-saved)
+
+    # Liberar result anterior
+    movq -24(%rbp), %rdi
     call free
-    mov r12, rax            ; result = new string
-.next:
-    mov rbx, [rbx + 16]     ; current = current->next
+
+    # Actualizar result = temp
+    movq %rbx, -24(%rbp)
+
+.next_node:
+    # current_node = current_node->next
+    movq -32(%rbp), %rax
+    movq (%rax), %rax       # rax = current_node->next
+    movq %rax, -32(%rbp)
     jmp .loop
-.done:
-    mov rax, r12            ; return result
-    pop r12
-    pop rbx
-    ret
-.return_empty:
-    mov rdi, rdx            ; hash
-    call strdup             ; Retornar copia de hash si lista vacía
-    pop r12
-    pop rbx
-    ret
-.return_null:
-    xor rax, rax
-    pop r12
-    pop rbx
+
+.return:
+    movq -24(%rbp), %rax    # Retornar result
+    leave
     ret
