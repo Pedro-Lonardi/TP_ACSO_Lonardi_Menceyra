@@ -20,125 +20,113 @@ extern str_concat
 
 
 string_proc_list_create_asm:
-    push rbp
-    mov rbp, rsp
-
-    mov edi, 16
+    ; void* malloc(size_t size)
+    mov rdi, 8              ; sizeof(string_proc_list)
     call malloc
 
     test rax, rax
-    je .return_null
+    je .error
 
-    mov qword [rax], 0
-    mov qword [rax + 8], 0
+    ; rax = list
+    mov qword [rax], 0      ; first = NULL
+    mov qword [rax + 8], 0  ; last = NULL
+    ret
 
-    jmp .done
-
-.return_null:
-
-.done:
-pop rbp
-ret
+.error:
+    ; return NULL
+    xor rax, rax
+    ret
 
 string_proc_node_create_asm:
-    push rbp
-    mov rbp, rsp
+    mov rdx, rdi            ; guardar type
+    mov rcx, rsi            ; guardar hash
 
-    mov edi, 32
+    mov rdi, 16             ; malloc(16)
     call malloc
 
     test rax, rax
-    je .return_null
+    je .error
 
-    mov qword [rax], 0
+    ; rax = node
+    mov byte [rax], dl      ; type
+    mov qword [rax + 4], rcx    ; hash
+    mov qword [rax + 12], 0     ; next = NULL
+    mov qword [rax + 20], 0     ; previous = NULL
+    ret
 
-    mov qword [rax + 8], 0
-
-    mov byte [rax + 16], dil
-
-    mov [rax + 24], rsi
-
-    jmp .done
-
-.return_null:
-
-.done:
-    pop rbp
+.error:
+    xor rax, rax
     ret
 
 string_proc_list_add_node_asm:
-    push rbp
-    mov rbp, rsp
+    push rbx
 
-    mov r8, rdi
-    mov r9b, sil
-    mov r10, rdx
-
-    mov dil, r9b
-    mov rsi, r10
+    ; llamar a string_proc_node_create_asm(type, hash)
+    mov rdi, rsi
+    mov rsi, rdx
     call string_proc_node_create_asm
 
     test rax, rax
-    je .end
+    je .done
 
-    cmp qword [r8], 0
-    je .lista_vacia
+    mov rbx, rax        ; rbx = node
+    mov rcx, [rdi]      ; list->first
 
-    mov rcx, [r8 + 8]
-    mov [rcx], rax
+    test rcx, rcx
+    je .empty_list
 
-    mov [rax + 8], rcx
+    ; nodo intermedio
+    mov rax, [rdi + 8]  ; list->last
+    mov [rax + 12], rbx ; last->next = node
+    mov [rbx + 20], rax ; node->prev = last
+    mov [rdi + 8], rbx  ; list->last = node
+    jmp .done
 
-    mov [r8 + 8], rax
+.empty_list:
+    mov [rdi], rbx      ; list->first = node
+    mov [rdi + 8], rbx  ; list->last  = node
 
-    jmp .end
-
-.lista_vacia:
-    mov [r8], rax
-    mov [r8 + 8], rax
-
-.end:
-    pop rbp
+.done:
+    pop rbx
     ret
 
 string_proc_list_concat_asm:
-    push rbp
-    mov rbp, rsp
+    push rbx
+    push r12
 
-    mov r8, rdi
-    mov r9b, sil
-    mov r10, rdx
-
-    mov rdi, r10
+    ; result = strdup(hash)
+    mov rdi, rdx
     call strdup
-    mov r12, rax
+    mov r12, rax       ; result = r12
 
-    mov r11, [r8]
+    ; current = list->first
+    mov rbx, [rdi]
 
 .loop:
-    test r11, r11
+    test rbx, rbx
     je .done
 
-    mov al, [r11 + 16]
-    cmp al, r9b
-    jne .next_node
+    movzx eax, byte [rbx]    ; node->type
+    cmp al, sil
+    jne .next
 
-    mov rdi, r12
-    mov rsi, [r11 + 24]
+    ; str_concat(result, node->hash)
+    mov rdi, r12             ; result
+    mov rsi, [rbx + 4]       ; node->hash
     call str_concat
-    mov r13, rax
 
+    ; free(result)
     mov rdi, r12
     call free
 
-    mov r12, r13
+    mov r12, rax             ; result = new string
 
-.next_node:
-    mov r11, [r11]
+.next:
+    mov rbx, [rbx + 12]      ; current = current->next
     jmp .loop
 
 .done:
-    mov rax, r12 
-
-    pop rbp
+    mov rax, r12             ; return result
+    pop r12
+    pop rbx
     ret
