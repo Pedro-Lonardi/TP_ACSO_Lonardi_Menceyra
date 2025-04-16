@@ -90,12 +90,23 @@ string_proc_list_concat_asm:
     push rbx
     push r12
     sub rsp, 8
+    mov r12, rdi          ; list ptr
     mov bl, sil           ; delimiter char
-    mov r12, rdi          ; save list ptr
-    mov rdi, rdx          ; initial str
+    ; handle NULL initial string
+    mov rax, rdx
+    test rax, rax
+    jne .Linit
+    lea rdi, [rel empty_str]
     lea rsi, [rel empty_str]
-    call str_concat       ; duplicate initial str
+    call str_concat       ; duplicate empty string
     mov rcx, rax          ; current result
+    jmp .Lprep
+.Linit:
+    mov rdi, rax          ; initial str
+    lea rsi, [rel empty_str]
+    call str_concat       ; duplicate initial
+    mov rcx, rax          ; current result
+.Lprep:
     mov r12, [r12]        ; head ptr
 .L5:
     test r12, r12
@@ -105,7 +116,7 @@ string_proc_list_concat_asm:
     mov rdi, rcx          ; current str
     mov rsi, [r12+24]     ; node.str
     call str_concat
-    mov rcx, rax
+    mov rcx, rax          ; update result
 .L7:
     mov r12, [r12]        ; next node
     jmp .L5
