@@ -52,7 +52,7 @@ string_proc_node_create_asm:
     ret
 
 ; add node to end of list
-; params: rdi=list ptr, esi=char, rdx=str ptr
+; params: rdi=list ptr, rsi=node ptr
 string_proc_list_add_node_asm:
     push rbp
     mov rbp, rsp
@@ -60,29 +60,29 @@ string_proc_list_add_node_asm:
     push r12
     sub rsp, 8
     mov r12, rdi          ; list ptr
-    mov edi, esi          ; char
-    mov rsi, rdx          ; str ptr
-    call string_proc_node_create_asm
-    add rsp, 8
-    test rax, rax
-    jz .L3
+    mov rax, rsi          ; node ptr
+    test rax, rax         ; if node NULL
+    jz .Ladd_end
     mov rbx, [r12+8]      ; tail ptr
     test rbx, rbx
-    jnz .L4
-    mov [r12], rax        ; head = new node
-    mov [r12+8], rax      ; tail = new node
-    jmp .L3
-.L4:
-    mov [rbx], rax        ; old tail.next = new node
-    mov [rax+8], rbx      ; new node.prev = old tail
-    mov [r12+8], rax      ; tail = new node
-.L3:
+    jnz .Ladd_middle
+    ; empty list: head = tail = node
+    mov [r12], rax
+    mov [r12+8], rax
+    jmp .Ladd_end
+.Ladd_middle:
+    ; append to non-empty list
+    mov [rbx], rax        ; old tail.next = node
+    mov [rax+8], rbx      ; node.prev = old tail
+    mov [r12+8], rax      ; list.tail = node
+.Ladd_end:
+    add rsp, 8
     pop r12
     pop rbx
     pop rbp
     ret
 
-; concatenate strings in list where node.char == delimiter
+; concatenate strings in list where node.char == delimiter in list where node.char == delimiter
 ; params: rdi=list ptr, esi=delimiter, rdx=initial str
 string_proc_list_concat_asm:
     push rbp
