@@ -7,10 +7,19 @@ section .data
 
 section .text
 
-section .text
 global string_proc_list_create_asm
-extern malloc, fprintf, stderr
+global string_proc_node_create_asm
+global string_proc_list_add_node_asm
+global string_proc_list_concat_asm
 
+extern strdup
+extern malloc, fprintf, stderr
+extern free
+extern str_concat
+
+; string_proc_list_create_asm
+; Creates and initializes a string_proc_list structure
+; Returns: pointer to allocated list or NULL on failure
 string_proc_list_create_asm:
     pushq %rbp
     movq %rsp, %rbp
@@ -23,27 +32,27 @@ string_proc_list_create_asm:
     cmpq $0, %rax                ; Check for NULL
     jne .init_list
     movq stderr(%rip), %rdi      ; Load stderr
-    leaq .error_msg(%rip), %rsi  ; Load error message
+    leaq .error_msg_list(%rip), %rsi  ; Load error message
     call fprintf
     movq $0, %rax                ; Return NULL
-    jmp .return
+    jmp .return_list
 
 .init_list:
     movq $0, (%rax)              ; list->first = NULL
     movq $0, 8(%rax)             ; list->last = NULL
 
-.return:
+.return_list:
     movq -8(%rbp), %rax          ; Return pointer
     leave
     ret
 
 section .rodata
-.error_msg: .string "Error: No se pudo crear la lista\n"
+.error_msg_list: .string "Error: No se pudo crear la lista\n"
 
-section .text
-global string_proc_node_create_asm
-extern malloc, fprintf, stderr
-
+; string_proc_node_create_asm
+; Creates and initializes a string_proc_node structure
+; Parameters: %dil = type (uint8_t), %rsi = hash (char*)
+; Returns: pointer to allocated node or NULL on failure
 string_proc_node_create_asm:
     pushq %rbp
     movq %rsp, %rbp
@@ -58,10 +67,10 @@ string_proc_node_create_asm:
     cmpq $0, %rax                ; Check for NULL
     jne .init_node
     movq stderr(%rip), %rdi      ; Load stderr
-    leaq .error_msg(%rip), %rsi  ; Load error message
+    leaq .error_msg_node(%rip), %rsi  ; Load error message
     call fprintf
     movq $0, %rax                ; Return NULL
-    jmp .return
+    jmp .return_node
 
 .init_node:
     movq $0, (%rax)              ; node->next = NULL
@@ -71,24 +80,24 @@ string_proc_node_create_asm:
     movq -8(%rbp), %rcx          ; Load hash
     movq %rcx, 24(%rax)          ; node->hash = hash
 
-.return:
+.return_node:
     movq -16(%rbp), %rax         ; Return pointer
     leave
     ret
 
 section .rodata
-.error_msg: .string "Error: No se pudo crear el nodo\n"
+.error_msg_node: .string "Error: No se pudo crear el nodo\n"
 
-section .text
-global string_proc_list_add_node_asm
-extern string_proc_node_create_asm, fprintf, stderr
-
+; string_proc_list_add_node_asm
+; Adds a new node to the end of the list
+; Parameters: %rdi = list (string_proc_list*), %sil = type (uint8_t), %rdx = hash (char*)
+; Returns: void
 string_proc_list_add_node_asm:
     pushq %rbp
     movq %rsp, %rbp
     subq $32, %rsp                ; Reserve space
     movq %rdi, -8(%rbp)          ; Save list
-    movb %sil, -9(%rbp)         ; Save type
+    movb %sil, -9(%rbp)          ; Save type
     movq %rdx, -16(%rbp)         ; Save hash
 
     movb %sil, %dil              ; type to %dil
@@ -99,9 +108,9 @@ string_proc_list_add_node_asm:
     cmpq $0, %rax                ; Check for NULL
     jne .check_list
     movq stderr(%rip), %rdi      ; Load stderr
-    leaq .error_msg(%rip), %rsi  ; Load error message
+    leaq .error_msg_node(%rip), %rsi  ; Load error message
     call fprintf
-    jmp .return
+    jmp .return_add
 
 .check_list:
     movq -8(%rbp), %rax          ; Load list
@@ -112,7 +121,7 @@ string_proc_list_add_node_asm:
     movq -24(%rbp), %rcx         ; Load node
     movq %rcx, (%rax)            ; list->first = node
     movq %rcx, 8(%rax)           ; list->last = node
-    jmp .return
+    jmp .return_add
 
 .add_to_end:
     movq 8(%rax), %rcx           ; list->last
@@ -122,23 +131,20 @@ string_proc_list_add_node_asm:
     movq -24(%rbp), %rcx         ; Load node
     movq %rcx, 8(%rax)           ; list->last = node
 
-.return:
+.return_add:
     leave
     ret
 
-section .rodata
-.error_msg: .string "Error: No se pudo crear el nodo\n"
-
-section .text
-global string_proc_list_concat_asm
-extern strdup, str_concat, free
-
+; string_proc_list_concat_asm
+; Concatenates hashes of nodes with matching type
+; Parameters: %rdi = list (string_proc_list*), %sil = type (uint8_t), %rdx = hash (char*)
+; Returns: pointer to concatenated string
 string_proc_list_concat_asm:
     pushq %rbp
     movq %rsp, %rbp
     subq $32, %rsp                ; Reserve space
     movq %rdi, -8(%rbp)          ; Save list
-    movb %sil, -9(%rbp)         ; Save type
+    movb %sil, -9(%rbp)          ; Save type
     movq %rdx, -16(%rbp)         ; Save hash
 
     movq %rdx, %rdi              ; hash to %rdi
@@ -152,10 +158,10 @@ string_proc_list_concat_asm:
 .loop:
     movq -32(%rbp), %rax         ; Load current_node
     cmpq $0, %rax                ; Check for NULL
-    je .return
+    je .return_concat
 
     movb 16(%rax), %cl           ; current_node->type
-    cmpb -9(%rbp), %cl          ; Compare with type
+    cmpb -9(%rbp), %cl           ; Compare with type
     jne .next_node
 
     movq -24(%rbp), %rdi         ; result to %rdi
@@ -174,7 +180,7 @@ string_proc_list_concat_asm:
     movq %rax, -32(%rbp)         ; Update current_node
     jmp .loop
 
-.return:
+.return_concat:
     movq -24(%rbp), %rax         ; Return result
     leave
     ret
