@@ -109,6 +109,12 @@ string_proc_list_add_node_asm:
     pop     rbx
     ret
 
+section .text
+global  string_proc_list_concat_asm
+extern  strdup
+extern  str_concat
+extern  free
+
 string_proc_list_concat_asm:
     ; RDI = list, RSI = type (uint8_t), RDX = initial hash
     push    rbx
