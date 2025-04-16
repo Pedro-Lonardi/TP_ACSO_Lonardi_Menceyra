@@ -32,28 +32,33 @@ string_proc_list_create_asm:
     ret
 
 string_proc_node_create_asm:
-    push rbx                ; Guardar rbx
+    push rbx
+    push r12
     mov rbx, rsi            ; Guardar hash en rbx
-    mov rsi, rdi            ; type en rsi
-    mov rdi, 32             ; malloc(32)
+    mov r12, rdi            ; Guardar type en r12
+    mov rdi, 32             ; malloc(32) para string_proc_node
     call malloc
     test rax, rax
     je .error
-    mov byte [rax], sil     ; node->type = type
+    mov r8, rax             ; r8 = puntero al nodo
+    mov byte [r8], r12b     ; node->type = type
     mov rdi, rbx            ; hash para strdup
-    call strdup             ; Duplicar hash
+    call strdup
     test rax, rax
-    je .free_node           ; Si strdup falla, liberar nodo
-    mov qword [rax + 8], rax; node->hash = strdup(hash)
-    mov qword [rax + 16], 0 ; node->next = NULL
-    mov qword [rax + 24], 0 ; node->previous = NULL
+    je .free_node
+    mov qword [r8 + 8], rax ; node->hash = strdup(hash)
+    mov qword [r8 + 16], 0  ; node->next = NULL
+    mov qword [r8 + 24], 0  ; node->previous = NULL
+    mov rax, r8             ; Retornar puntero al nodo
+    pop r12
     pop rbx
     ret
 .free_node:
-    mov rdi, rax            ; Liberar nodo
+    mov rdi, r8             ; Liberar nodo
     call free
 .error:
     xor rax, rax
+    pop r12
     pop rbx
     ret
 
