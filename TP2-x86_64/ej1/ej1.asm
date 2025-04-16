@@ -11,124 +11,143 @@ global string_proc_node_create_asm
 global string_proc_list_add_node_asm
 global string_proc_list_concat_asm
 
-extern malloc
-extern free
-extern fprintf
-extern strdup
-extern str_concat
-extern stderr
+extern  malloc
+extern  fprintf
+extern  stderr
+extern  strdup
+extern  free
+extern  str_concat
+extern  string_proc_node_create_asm
 
-;------------------------------------------------------------
-; string_proc_list_create_asm(void)
-;------------------------------------------------------------
+section .rodata
+Lcreate_list_err: db "Error: No se pudo crear la lista",10,0
+Lcreate_node_err: db "Error: No se pudo crear el nodo",10,0
+
+section .text
+
+; — string_proc_list_create_asm — malloc(sizeof(list)) y cero campos — 
 string_proc_list_create_asm:
-    mov     rdi, 16             ; tamaño de string_proc_list
+    mov     rdi, 16           ; tamaño de string_proc_list (2 punteros = 16 bytes)
     call    malloc
     test    rax, rax
-    jne     .create_list_ok
-    ; error: fprintf(stderr, ...)
-    mov     rdi, [rel stderr]
-    lea     rsi, [rel err_list]
+    jnz     .Lcl_ok
+    ; en error, fprintf(stderr, msg)
+    mov     rdi, stderr
+    lea     rsi, [rel Lcreate_list_err]
     xor     rax, rax
     call    fprintf
     xor     rax, rax
     ret
-.create_list_ok:
-    mov     qword [rax], 0      ; list->first = NULL
-    mov     qword [rax+8], 0    ; list->last = NULL
+.Lcl_ok:
+    mov     qword [rax],    0 ; list->first = NULL
+    mov     qword [rax+8],  0 ; list->last  = NULL
     ret
 
-;------------------------------------------------------------
-; string_proc_node_create_asm(uint8_t type, char* hash)
-;------------------------------------------------------------
+; — string_proc_node_create_asm — malloc(sizeof(node)), asigna tipo y hash —
 string_proc_node_create_asm:
-    mov     r8b, dil            ; guardar 'type'
-    mov     rdi, 32             ; tamaño de string_proc_node
+    ; recibe: RDI=type, RSI=hash
+    push    rdi               ; guardo type
+    push    rsi               ; guardo hash
+    mov     rdi, 32           ; tamaño string_proc_node (3 punteros + 1 byte + padding)
     call    malloc
     test    rax, rax
-    jne     .create_node_ok
-    ; error: fprintf(stderr, ...)
-    mov     rdi, [rel stderr]
-    lea     rsi, [rel err_node]
+    jnz     .Lnc_ok
+    ; error:
+    mov     rdi, stderr
+    lea     rsi, [rel Lcreate_node_err]
     xor     rax, rax
     call    fprintf
+    pop     rsi
+    pop     rdi
     xor     rax, rax
     ret
-.create_node_ok:
-    mov     qword [rax], 0      ; node->next = NULL
-    mov     qword [rax+8], 0    ; node->previous = NULL
-    mov     byte  [rax+16], r8b ; node->type = type
-    mov     qword [rax+24], rsi ; node->hash = hash
+.Lnc_ok:
+    pop     rsi               ; RSI = hash
+    pop     rdi               ; RDI = type
+    ; inicializa enlaces a NULL
+    mov     qword [rax],    0
+    mov     qword [rax+8],  0
+    ; guarda type (byte) y hash (puntero)
+    mov     byte [rax+16],  dil
+    mov     qword [rax+24], rsi
     ret
 
-;------------------------------------------------------------
-; string_proc_list_add_node_asm(list, type, hash)
-;------------------------------------------------------------
+; — string_proc_list_add_node_asm — llama a node_create y lo enlaza al final —
 string_proc_list_add_node_asm:
-    push    rbx                 ; preservar callee-saved para list pointer
-    mov     rbx, rdi            ; rbx = list
-    mov     rdi, rsi            ; rdi = type
-    mov     rsi, rdx            ; rsi = hash
-    call    string_proc_node_create_asm
-    test    rax, rax
-    je      .node_fail
-    ; rax = new node, rbx = list
-    mov     rcx, [rbx]          ; rcx = list->first
-    test    rcx, rcx
-    jne     .list_not_empty
-    ; lista vacía
-    mov     [rbx], rax          ; list->first = node
-    mov     [rbx+8], rax        ; list->last  = node
-    jmp     .add_node_done
-.list_not_empty:
-    mov     rcx, [rbx+8]        ; rcx = list->last
-    mov     [rcx], rax          ; last->next = node
-    mov     [rax+8], rcx        ; node->previous = old last
-    mov     [rbx+8], rax        ; list->last = node
-.add_node_done:
-    pop     rbx
-    ret
-.node_fail:
-    pop     rbx
-    ret
-
-;------------------------------------------------------------
-; string_proc_list_concat_asm(list, type, hash)
-;------------------------------------------------------------
-string_proc_list_concat_asm:
+    ; recibe: RDI = list, RSI = type, RDX = hash
     push    rbx
     push    r12
     push    r13
-    mov     r12, rdi            ; r12 = list
-    mov     r13b, sil           ; r13b = type
-    mov     rdi, rdx            ; rdi = initial hash
-    call    strdup
-    mov     rbx, rax            ; rbx = result
-    mov     rcx, [r12]          ; rcx = list->first
-.concat_loop:
-    cmp     rcx, 0
-    je      .concat_done
-    mov     al, [rcx+16]        ; node->type
-    cmp     al, r13b
-    jne     .skip_concat
-    mov     rdi, rbx            ; arg1: accumulated string
-    mov     rsi, [rcx+24]       ; arg2: node->hash
-    call    str_concat
-    mov     rdi, rbx
-    call    free
-    mov     rbx, rax            ; update result
-.skip_concat:
-    mov     rcx, [rcx]          ; next node
-    jmp     .concat_loop
-.concat_done:
-    mov     rax, rbx
+
+    mov     r12, rdi          ; r12 = list
+    mov     rdi, rsi          ; arg1 = type
+    mov     rsi, rdx          ; arg2 = hash
+    call    string_proc_node_create_asm
+    test    rax, rax
+    jz      .Ladd_end
+
+    ; comprueba si la lista está vacía
+    mov     r13, [r12]        ; r13 = list->first
+    test    r13, r13
+    jnz     .Lnot_empty
+
+    ; vacía → first = last = node
+    mov     [r12],    rax
+    mov     [r12+8],  rax
+    jmp     .Ladd_end
+
+.Lnot_empty:
+    ; last->next = node
+    mov     r13,    [r12+8]   ; r13 = list->last
+    mov     [r13],  rax       ; r13->next = node
+    mov     [rax+8], r13      ; node->previous = last
+    mov     [r12+8], rax      ; list->last = node
+
+.Ladd_end:
     pop     r13
     pop     r12
     pop     rbx
     ret
 
-section .rodata
-err_list:
-    db "Error: No se pudo crear la lista\n", 0
-err_node:
-    db "Error: No se pudo crear el nodo\n", 0
+; — string_proc_list_concat_asm — duplica hash y concatena todas las coincidencias —
+string_proc_list_concat_asm:
+    ; recibe: RDI = list, RSI = type, RDX = hash
+    push    rbx
+    push    r12
+    push    r13
+    push    r14
+
+    mov     r13, rdi          ; r13 = list
+    movzx   r12d, sil         ; r12b = type
+    ; result = strdup(hash)
+    mov     rdi, rdx
+    call    strdup
+    mov     r14, rax          ; r14 = result
+    ; current = list->first
+    mov     rbx, [r13]
+
+.Lconcat_loop:
+    test    rbx, rbx
+    jz      .Lconcat_done
+    mov     al, [rbx+16]      ; current->type
+    cmp     al, r12b
+    jne     .Lnext
+    ; temp = str_concat(result, current->hash)
+    mov     rdi, r14
+    mov     rsi, [rbx+24]
+    call    str_concat
+    ; free(old)
+    mov     rdi, r14
+    call    free
+    mov     r14, rax          ; result = temp
+.Lnext:
+    mov     rbx, [rbx]        ; next node
+    jmp     .Lconcat_loop
+
+.Lconcat_done:
+    mov     rax, r14          ; devuelve result
+    pop     r14
+    pop     r13
+    pop     r12
+    pop     rbx
+    ret
