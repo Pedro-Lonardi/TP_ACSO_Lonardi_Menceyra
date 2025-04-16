@@ -12,101 +12,170 @@ global string_proc_node_create_asm
 global string_proc_list_add_node_asm
 global string_proc_list_concat_asm
 
+; FUNCIONES auxiliares que pueden llegar a necesitar:
 extern malloc
+extern free
 extern str_concat
 
-; Allocate and initialize an empty list
+
+.LC0:
+        .string "Error: No se pudo crear la lista\n"
 string_proc_list_create_asm:
-    push rbp
-    mov rbp, rsp
-    mov edi, 16                ; size of string_proc_list (2 pointers)
-    call malloc
-    test rax, rax
-    jz .sp_list_create_done
-    mov QWORD [rax], 0         ; first = NULL
-    mov QWORD [rax+8], 0       ; last = NULL
-.sp_list_create_done:
-    pop rbp
-    ret
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 16
+        mov     edi, 16
+        call    malloc
+        mov     QWORD PTR [rbp-8], rax
+        cmp     QWORD PTR [rbp-8], 0
+        jne     .L2
+        mov     rax, QWORD PTR stderr[rip]
+        mov     rcx, rax
+        mov     edx, 33
+        mov     esi, 1
+        mov     edi, OFFSET FLAT:.LC0
+        call    fwrite
+        mov     eax, 0
+        jmp     .L1
+.L2:
+        mov     rax, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax], 0
+        mov     rax, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax+8], 0
+.L1:
+        leave
+        ret
 
-; Allocate and initialize a node
+.LC1:
+        .string "Error: No se pudo crear el nodo\n"
 string_proc_node_create_asm:
-    push rbp
-    mov rbp, rsp
-    push rdi                   ; save type
-    push rsi                   ; save hash pointer
-    mov edi, 32                ; size of string_proc_node (32 bytes)
-    call malloc
-    test rax, rax
-    pop rsi                    ; restore hash pointer
-    pop rdi                    ; restore type
-    jz .sp_node_create_end
-    mov QWORD [rax], 0         ; next = NULL
-    mov QWORD [rax+8], 0       ; previous = NULL
-    mov al, dil                ; type (low 8 bits of RDI)
-    mov [rax+16], al           ; set node->type
-    mov [rax+24], rsi          ; set node->hash
-.sp_node_create_end:
-    pop rbp
-    ret
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 32
+        mov     eax, edi
+        mov     QWORD PTR [rbp-32], rsi
+        mov     BYTE PTR [rbp-20], al
+        mov     edi, 32
+        call    malloc
+        mov     QWORD PTR [rbp-8], rax
+        cmp     QWORD PTR [rbp-8], 0
+        jne     .L5
+        mov     rax, QWORD PTR stderr[rip]
+        mov     rcx, rax
+        mov     edx, 32
+        mov     esi, 1
+        mov     edi, OFFSET FLAT:.LC1
+        call    fwrite
+        mov     eax, 0
+        jmp     .L6
+.L5:
+        mov     rax, QWORD PTR [rbp-8]
+        movzx   edx, BYTE PTR [rbp-20]
+        mov     BYTE PTR [rax+16], dl
+        mov     rax, QWORD PTR [rbp-8]
+        mov     rdx, QWORD PTR [rbp-32]
+        mov     QWORD PTR [rax+24], rdx
+        mov     rax, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax], 0
+        mov     rax, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax+8], 0
+        mov     rax, QWORD PTR [rbp-8]
+.L6:
+        leave
+        ret
 
-; Add a node to the end of the list
 string_proc_list_add_node_asm:
-    push rbp
-    mov rbp, rsp
-    push rbx                   ; preserve rbx
-    sub rsp, 8                 ; align stack for call
-    mov rbx, rdi               ; rbx = list pointer
-    mov edi, esi               ; edi = type
-    mov rsi, rdx               ; rsi = hash pointer
-    call string_proc_node_create_asm
-    test rax, rax
-    jz .sp_list_add_cleanup
-    ; rax = new node pointer
-    mov rcx, [rbx+8]           ; rcx = list->last
-    test rcx, rcx
-    jnz .sp_list_add_non_empty
-    ; empty list
-    mov [rbx], rax             ; list->first = new node
-    mov [rbx+8], rax           ; list->last = new node
-    jmp .sp_list_add_cleanup
-.sp_list_add_non_empty:
-    mov [rcx], rax             ; old_last->next = new node
-    mov [rax+8], rcx           ; new_node->previous = old last
-    mov [rbx+8], rax           ; list->last = new node
-.sp_list_add_cleanup:
-    add rsp, 8
-    pop rbx
-    pop rbp
-    ret
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 48
+        mov     QWORD PTR [rbp-24], rdi
+        mov     eax, esi
+        mov     QWORD PTR [rbp-40], rdx
+        mov     BYTE PTR [rbp-28], al
+        movzx   eax, BYTE PTR [rbp-28]
+        mov     rdx, QWORD PTR [rbp-40]
+        mov     rsi, rdx
+        mov     edi, eax
+        call    string_proc_node_create
+        mov     QWORD PTR [rbp-8], rax
+        cmp     QWORD PTR [rbp-8], 0
+        jne     .L8
+        mov     rax, QWORD PTR stderr[rip]
+        mov     rcx, rax
+        mov     edx, 32
+        mov     esi, 1
+        mov     edi, OFFSET FLAT:.LC1
+        call    fwrite
+        jmp     .L7
+.L8:
+        mov     rax, QWORD PTR [rbp-24]
+        mov     rax, QWORD PTR [rax]
+        test    rax, rax
+        jne     .L10
+        mov     rax, QWORD PTR [rbp-24]
+        mov     rdx, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax], rdx
+        mov     rax, QWORD PTR [rbp-24]
+        mov     rdx, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax+8], rdx
+        jmp     .L7
+.L10:
+        mov     rax, QWORD PTR [rbp-24]
+        mov     rax, QWORD PTR [rax+8]
+        mov     rdx, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax], rdx
+        mov     rax, QWORD PTR [rbp-24]
+        mov     rdx, QWORD PTR [rax+8]
+        mov     rax, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax+8], rdx
+        mov     rax, QWORD PTR [rbp-24]
+        mov     rdx, QWORD PTR [rbp-8]
+        mov     QWORD PTR [rax+8], rdx
+.L7:
+        leave
+        ret
 
-; Concatenate hash strings for nodes of a given type
 string_proc_list_concat_asm:
-    push rbp
-    mov rbp, rsp
-    push rbx                   ; preserve rbx
-    sub rsp, 8                 ; align stack
-    mov QWORD [rbp-8], rsi     ; save type parameter
-    mov rcx, rdx               ; rcx = initial hash pointer
-    mov rbx, [rdi]             ; rbx = list->first
-.sp_list_concat_loop:
-    test rbx, rbx
-    jz .sp_list_concat_done
-    mov al, BYTE [rbp-8]       ; load saved type
-    mov dl, BYTE [rbx+16]      ; node->type
-    cmp dl, al
-    jne .sp_list_concat_next
-    ; concatenate rcx (result) with node->hash
-    mov rdi, rcx
-    mov rsi, [rbx+24]
-    call str_concat
-    mov rcx, rax               ; update result
-.sp_list_concat_next:
-    mov rbx, [rbx]             ; move to next node
-    jmp .sp_list_concat_loop
-.sp_list_concat_done:
-    mov rax, rcx               ; return result
-    add rsp, 8
-    pop rbx
-    pop rbp
-    ret
+        push    rbp
+        mov     rbp, rsp
+        sub     rsp, 64
+        mov     QWORD PTR [rbp-40], rdi
+        mov     eax, esi
+        mov     QWORD PTR [rbp-56], rdx
+        mov     BYTE PTR [rbp-44], al
+        mov     rax, QWORD PTR [rbp-40]
+        mov     rax, QWORD PTR [rax]
+        mov     QWORD PTR [rbp-8], rax
+        mov     rax, QWORD PTR [rbp-56]
+        mov     rdi, rax
+        call    strdup
+        mov     QWORD PTR [rbp-16], rax
+        jmp     .L12
+.L14:
+        mov     rax, QWORD PTR [rbp-8]
+        movzx   eax, BYTE PTR [rax+16]
+        cmp     BYTE PTR [rbp-44], al
+        jne     .L13
+        mov     rax, QWORD PTR [rbp-8]
+        mov     rdx, QWORD PTR [rax+24]
+        mov     rax, QWORD PTR [rbp-16]
+        mov     rsi, rdx
+        mov     rdi, rax
+        call    str_concat
+        mov     QWORD PTR [rbp-24], rax
+        mov     rax, QWORD PTR [rbp-16]
+        mov     rdi, rax
+        call    free
+        mov     rax, QWORD PTR [rbp-24]
+        mov     QWORD PTR [rbp-16], rax
+.L13:
+        mov     rax, QWORD PTR [rbp-8]
+        mov     rax, QWORD PTR [rax]
+        mov     QWORD PTR [rbp-8], rax
+.L12:
+        cmp     QWORD PTR [rbp-8], 0
+        jne     .L14
+        mov     rax, QWORD PTR [rbp-16]
+        leave
+        ret
+
