@@ -65,28 +65,31 @@ string_proc_node_create_asm:
 ; string_proc_list_add_node_asm(list, type, hash)
 ;------------------------------------------------------------
 string_proc_list_add_node_asm:
-    mov     r8, rdi             ; r8 = list
+    push    rbx                 ; preservar callee-saved para list pointer
+    mov     rbx, rdi            ; rbx = list
     mov     rdi, rsi            ; rdi = type
     mov     rsi, rdx            ; rsi = hash
     call    string_proc_node_create_asm
     test    rax, rax
     je      .node_fail
-    ; rax = new node, r8 = list
-    mov     rcx, [r8]           ; cargamos list->first
+    ; rax = new node, rbx = list
+    mov     rcx, [rbx]          ; rcx = list->first
     test    rcx, rcx
     jne     .list_not_empty
     ; lista vacía
-    mov     [r8], rax           ; list->first = node
-    mov     [r8+8], rax         ; list->last  = node
-    jmp     .add_node_end
+    mov     [rbx], rax          ; list->first = node
+    mov     [rbx+8], rax        ; list->last  = node
+    jmp     .add_node_done
 .list_not_empty:
-    mov     rcx, [r8+8]         ; rcx = list->last
+    mov     rcx, [rbx+8]        ; rcx = list->last
     mov     [rcx], rax          ; last->next = node
     mov     [rax+8], rcx        ; node->previous = old last
-    mov     [r8+8], rax         ; list->last = node
-.add_node_end:
+    mov     [rbx+8], rax        ; list->last = node
+.add_node_done:
+    pop     rbx
     ret
 .node_fail:
+    pop     rbx
     ret
 
 ;------------------------------------------------------------
@@ -98,24 +101,24 @@ string_proc_list_concat_asm:
     push    r13
     mov     r12, rdi            ; r12 = list
     mov     r13b, sil           ; r13b = type
-    mov     rdi, rdx            ; rdi = hash (inicial)
+    mov     rdi, rdx            ; rdi = initial hash
     call    strdup
     mov     rbx, rax            ; rbx = result
     mov     rcx, [r12]          ; rcx = list->first
 .concat_loop:
     cmp     rcx, 0
     je      .concat_done
-    mov     al, [rcx+16]        ; nodo->type
+    mov     al, [rcx+16]        ; node->type
     cmp     al, r13b
     jne     .skip_concat
-    mov     rdi, rbx            ; arg1: cadena acumulada
-    mov     rsi, [rcx+24]       ; arg2: nodo->hash
+    mov     rdi, rbx            ; arg1: accumulated string
+    mov     rsi, [rcx+24]       ; arg2: node->hash
     call    str_concat
     mov     rdi, rbx
     call    free
-    mov     rbx, rax            ; actualizar resultado
+    mov     rbx, rax            ; update result
 .skip_concat:
-    mov     rcx, [rcx]          ; siguiente nodo
+    mov     rcx, [rcx]          ; next node
     jmp     .concat_loop
 .concat_done:
     mov     rax, rbx
