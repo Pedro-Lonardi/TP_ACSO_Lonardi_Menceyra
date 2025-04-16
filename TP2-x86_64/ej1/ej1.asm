@@ -109,43 +109,68 @@ string_proc_list_add_node_asm:
     pop     rbx
     ret
 
-; — string_proc_list_concat_asm — duplica hash y concatena todas las coincidencias —
 string_proc_list_concat_asm:
-    ; recibe: RDI = list, RSI = type, RDX = hash
+    ; RDI = list, RSI = type (uint8_t), RDX = initial hash
     push    rbx
     push    r12
     push    r13
     push    r14
 
-    mov     r13, rdi          ; r13 = list
-    movzx   r12d, sil         ; r12b = type
-    ; result = strdup(hash)
+    mov     r13, rdi            ; r13 = list*
+    movzx   ecx, sil            ; ecx = type (zero-extend from sil)
+
+    ; result = strdup(initial_hash)
     mov     rdi, rdx
     call    strdup
-    mov     r14, rax          ; r14 = result
-    ; current = list->first
-    mov     rbx, [r13]
+    test    rax, rax
+    jz      .done               ; si falla strdup, devolvemos NULL
+    mov     r14, rax            ; r14 = result
 
-.Lconcat_loop:
+    ; current = list->first
+    mov     rbx, [r13]          ; rbx = list->first
+
+.loop:
     test    rbx, rbx
-    jz      .Lconcat_done
-    mov     al, [rbx+16]      ; current->type
-    cmp     al, r12b
-    jne     .Lnext
-    ; temp = str_concat(result, current->hash)
-    mov     rdi, r14
-    mov     rsi, [rbx+24]
+    jz      .done_loop
+
+    ; if (current->type == type)
+    movzx   ecx, byte [rbx+16]  ; ecx = current->type
+    cmp     ecx, sil
+    jne     .next_node
+
+    ; hash_ptr = current->hash
+    mov     rdx, [rbx+24]
+    test    rdx, rdx
+    jz      .next_node          ; si hash es NULL, nos saltamos
+
+    ; temp = str_concat(result, hash_ptr)
+    mov     rdi, r14            ; arg1 = result
+    mov     rsi, rdx            ; arg2 = hash_ptr
     call    str_concat
-    ; free(old)
+    test    rax, rax
+    jz      .cleanup            ; si falla, liberamos y salimos
+
+    ; free(old result)
     mov     rdi, r14
     call    free
-    mov     r14, rax          ; result = temp
-.Lnext:
-    mov     rbx, [rbx]        ; next node
-    jmp     .Lconcat_loop
 
-.Lconcat_done:
-    mov     rax, r14          ; devuelve result
+    mov     r14, rax            ; result = temp
+
+.next_node:
+    mov     rbx, [rbx]          ; current = current->next
+    jmp     .loop
+
+.done_loop:
+    mov     rax, r14            ; devolvemos result
+    jmp     .epilog
+
+.cleanup:
+    ; en caso de error, liberamos lo que tengamos
+    mov     rdi, r14
+    call    free
+    xor     rax, rax
+
+.epilog:
     pop     r14
     pop     r13
     pop     r12
