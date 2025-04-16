@@ -20,72 +20,64 @@ extern str_concat
 
 
 string_proc_list_create_asm:
-    ; void* malloc(size_t size)
-    mov rdi, 8              ; sizeof(string_proc_list)
+    mov rdi, 16             ; sizeof(string_proc_list) = 16 bytes
     call malloc
-
     test rax, rax
     je .error
-
-    ; rax = list
-    mov qword [rax], 0      ; first = NULL
-    mov qword [rax + 8], 0  ; last = NULL
+    mov qword [rax], 0      ; list->first = NULL
+    mov qword [rax + 8], 0  ; list->last = NULL
     ret
-
 .error:
-    ; return NULL
     xor rax, rax
     ret
 
 string_proc_node_create_asm:
-    mov rdx, rdi            ; type en rdx
-    mov rcx, rsi            ; hash en rcx
-
-    mov rdi, 32             ; malloc(32) CORRECTO
+    push rbx                ; Guardar rbx
+    mov rbx, rsi            ; Guardar hash en rbx
+    mov rsi, rdi            ; type en rsi
+    mov rdi, 32             ; malloc(32)
     call malloc
-
     test rax, rax
     je .error
-
-    ; rax = nodo
-    mov byte [rax], dl          ; type en offset 0
-    mov qword [rax + 8], rcx    ; hash en offset 8
-    mov qword [rax + 16], 0     ; next en offset 16
-    mov qword [rax + 24], 0     ; previous en offset 24
+    mov byte [rax], sil     ; node->type = type
+    mov rdi, rbx            ; hash para strdup
+    call strdup             ; Duplicar hash
+    test rax, rax
+    je .free_node           ; Si strdup falla, liberar nodo
+    mov qword [rax + 8], rax; node->hash = strdup(hash)
+    mov qword [rax + 16], 0 ; node->next = NULL
+    mov qword [rax + 24], 0 ; node->previous = NULL
+    pop rbx
     ret
-
+.free_node:
+    mov rdi, rax            ; Liberar nodo
+    call free
 .error:
     xor rax, rax
+    pop rbx
     ret
 
 string_proc_list_add_node_asm:
     push rbx
-
-    ; llamar a string_proc_node_create_asm(type, hash)
-    mov rdi, rsi
-    mov rsi, rdx
+    test rdi, rdi           ; Verificar si list es NULL
+    je .done
+    mov rbx, rdi            ; Guardar list en rbx
+    mov rdi, rsi            ; type
+    mov rsi, rdx            ; hash
     call string_proc_node_create_asm
-
     test rax, rax
     je .done
-
-    mov rbx, rax        ; rbx = node
-    mov rcx, [rdi]      ; list->first
-
+    mov rcx, [rbx]          ; list->first
     test rcx, rcx
     je .empty_list
-
-    ; nodo intermedio
-    mov rax, [rdi + 8]  ; list->last
-    mov [rax + 16], rbx ; last->next = node
-    mov [rbx + 24], rax ; node->prev = last
-    mov [rdi + 8], rbx  ; list->last = node
+    mov rcx, [rbx + 8]      ; list->last
+    mov [rcx + 16], rax     ; last->next = node
+    mov [rax + 24], rcx     ; node->prev = last
+    mov [rbx + 8], rax      ; list->last = node
     jmp .done
-
 .empty_list:
-    mov [rdi], rbx      ; list->first = node
-    mov [rdi + 8], rbx  ; list->last  = node
-
+    mov [rbx], rax          ; list->first = node
+    mov [rbx + 8], rax      ; list->last = node
 .done:
     pop rbx
     ret
@@ -93,40 +85,44 @@ string_proc_list_add_node_asm:
 string_proc_list_concat_asm:
     push rbx
     push r12
-
-    ; result = strdup(hash)
-    mov rdi, rdx
+    test rdi, rdi           ; Verificar si list es NULL
+    je .return_empty
+    mov rbx, [rdi]          ; list->first
+    test rbx, rbx           ; Verificar si list->first es NULL
+    je .return_empty
+    mov rdi, rdx            ; hash
     call strdup
-    mov r12, rax       ; result = r12
-
-    ; current = list->first
-    mov rbx, [rdi]
-
+    test rax, rax           ; Verificar si strdup falla
+    je .return_null
+    mov r12, rax            ; result = r12
 .loop:
     test rbx, rbx
     je .done
-
-    movzx eax, byte [rbx]    ; node->type
+    movzx eax, byte [rbx]   ; node->type
     cmp al, sil
     jne .next
-
-    ; str_concat(result, node->hash)
-    mov rdi, r12             ; result
-    mov rsi, [rbx + 4]       ; node->hash
+    mov rdi, r12            ; result
+    mov rsi, [rbx + 8]      ; node->hash
     call str_concat
-
-    ; free(result)
-    mov rdi, r12
+    mov rdi, r12            ; Liberar result anterior
     call free
-
-    mov r12, rax             ; result = new string
-
+    mov r12, rax            ; result = new string
 .next:
-    mov rbx, [rbx + 12]      ; current = current->next
+    mov rbx, [rbx + 16]     ; current = current->next
     jmp .loop
-
 .done:
-    mov rax, r12             ; return result
+    mov rax, r12            ; return result
+    pop r12
+    pop rbx
+    ret
+.return_empty:
+    mov rdi, rdx            ; hash
+    call strdup             ; Retornar copia de hash si lista vacía
+    pop r12
+    pop rbx
+    ret
+.return_null:
+    xor rax, rax
     pop r12
     pop rbx
     ret
