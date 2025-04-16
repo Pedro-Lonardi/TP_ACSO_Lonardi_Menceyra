@@ -1,197 +1,162 @@
-; /** defines bool y puntero **/
-%define NULL 0
-%define TRUE 1
-%define FALSE 0
+    .intel_syntax noprefix
+    .section .text
 
-section .data
+    .extern malloc
+    .extern free
+    .extern fprintf
+    .extern strdup
+    .extern str_concat
+    .extern stderr
 
-section .text
-
-global string_proc_list_create_asm
-global string_proc_node_create_asm
-global string_proc_list_add_node_asm
-global string_proc_list_concat_asm
-
-; FUNCIONES auxiliares que pueden llegar a necesitar:
-extern malloc
-extern free
-extern str_concat
-
+############################################
+# string_proc_list_create_asm
+############################################
 .global string_proc_list_create_asm
 .type string_proc_list_create_asm, @function
 string_proc_list_create_asm:
-    ; llamar a malloc(sizeof(string_proc_list)) -> 16 bytes (2 punteros)
-    mov     $16, %rdi              ; argumento para malloc
-    call    malloc                 ; malloc devuelve puntero en %rax
-
-    test    %rax, %rax             ; ¿es NULL?
-    je      .error                 ; si es NULL, salta a error
-
-    ; inicializar campos: list->first = NULL; list->last = NULL
-    movq    $0, (%rax)             ; *(rax)     = NULL (first)
-    movq    $0, 8(%rax)            ; *(rax + 8) = NULL (last)
-
+    mov     rdi, 16                  # sizeof(string_proc_list)
+    call    malloc
+    test    rax, rax
+    je      .error_list_create
+    mov     qword ptr [rax], 0      # list->first = NULL
+    mov     qword ptr [rax + 8], 0  # list->last  = NULL
     ret
 
-.error:
-    mov     stderr(%rip), %rdi
-    mov     $.errmsg, %rsi
+.error_list_create:
+    mov     rdi, qword ptr stderr[rip]
+    mov     rsi, offset .errmsg_list
     call    fprintf
-    mov     $0, %rax
+    xor     rax, rax
     ret
 
-.section .rodata
-.errmsg:
-    .string "Error: No se pudo crear la lista\n"
-
-
+############################################
+# string_proc_node_create_asm
+############################################
 .global string_proc_node_create_asm
 .type string_proc_node_create_asm, @function
 string_proc_node_create_asm:
-    push    %rbp
-    mov     %rsp, %rbp
+    push    rbp
+    mov     rbp, rsp
 
-    ; malloc(sizeof(string_proc_node)) -> 24 bytes (4 campos de 8 bytes cada uno)
-    mov     $24, %rdi
+    mov     rdi, 24                  # sizeof(string_proc_node)
     call    malloc
-    test    %rax, %rax
-    je      .error
+    test    rax, rax
+    je      .error_node_create
 
-    ; rdi = type (uint8_t)  → originalmente estaba en %dil
-    ; rsi = hash (char*)   → %rsi
+    mov     byte ptr [rax + 16], dil    # node->type
+    mov     qword ptr [rax + 8], rsi    # node->hash
+    mov     qword ptr [rax], 0          # node->next
+    mov     qword ptr [rax + 16 + 8], 0 # node->previous
 
-    ; Guardamos el puntero del nodo en %rax, y lo vamos usando para escribir
-    mov     %dil, 16(%rax)        ; node->type = type (offset 16)
-    mov     %rsi, 8(%rax)         ; node->hash = hash (offset 8)
-    movq    $0, 0(%rax)           ; node->next = NULL
-    movq    $0,  8+8(%rax)        ; node->previous = NULL (offset 16)
-
-    ; ya seteamos todo, devolvemos el puntero
     leave
     ret
 
-.error:
-    mov     stderr(%rip), %rdi
-    mov     $.errmsg, %rsi
+.error_node_create:
+    mov     rdi, qword ptr stderr[rip]
+    mov     rsi, offset .errmsg_node
     call    fprintf
-    mov     $0, %rax
+    xor     rax, rax
     leave
     ret
 
-.section .rodata
-.errmsg:
-    .string "Error: No se pudo crear el nodo\n"
-
-
+############################################
+# string_proc_list_add_node_asm
+############################################
 .global string_proc_list_add_node_asm
 .type string_proc_list_add_node_asm, @function
 string_proc_list_add_node_asm:
-    push    %rbp
-    mov     %rsp, %rbp
-    push    %rbx                 ; usamos rbx para mantener el puntero a 'list'
+    push    rbp
+    mov     rbp, rsp
+    push    rbx
 
-    ; argumentos:
-    ; rdi = list
-    ; sil = type
-    ; rdx = hash
-
-    mov     %rdi, %rbx          ; guardamos list en rbx
-    mov     %sil, %dil          ; movemos type a %dil (1er arg para call)
-    mov     %rdx, %rsi          ; hash en %rsi (2do arg)
+    mov     rbx, rdi                # list
+    mov     dil, sil               # type (1st arg)
+    mov     rsi, rdx               # hash (2nd arg)
     call    string_proc_node_create_asm
 
-    test    %rax, %rax
-    je      .error              ; si node == NULL, error
+    test    rax, rax
+    je      .error_add_node
 
-    ; %rax = node
-    ; chequear si list->first == NULL
-    mov     (%rbx), %rcx        ; rcx = list->first
-    test    %rcx, %rcx
+    mov     rcx, qword ptr [rbx]   # list->first
+    test    rcx, rcx
     je      .empty_list
 
-    ; caso: lista no vacía
-    mov     8(%rbx), %rdx       ; rdx = list->last
-    mov     %rax, (%rdx)        ; list->last->next = node
-    mov     %rdx, 16(%rax)      ; node->previous = list->last
-    mov     %rax, 8(%rbx)       ; list->last = node
-    jmp     .done
+    mov     rdx, qword ptr [rbx + 8]  # list->last
+    mov     qword ptr [rdx], rax      # last->next = node
+    mov     qword ptr [rax + 16], rdx # node->previous = last
+    mov     qword ptr [rbx + 8], rax  # list->last = node
+    jmp     .done_add
 
 .empty_list:
-    mov     %rax, (%rbx)        ; list->first = node
-    mov     %rax, 8(%rbx)       ; list->last = node
-    jmp     .done
+    mov     qword ptr [rbx], rax      # list->first = node
+    mov     qword ptr [rbx + 8], rax  # list->last  = node
+    jmp     .done_add
 
-.error:
-    mov     stderr(%rip), %rdi
-    mov     $.errmsg_add_node, %rsi
+.error_add_node:
+    mov     rdi, qword ptr stderr[rip]
+    mov     rsi, offset .errmsg_node
     call    fprintf
 
-.done:
-    pop     %rbx
+.done_add:
+    pop     rbx
     leave
     ret
 
-.section .rodata
-.errmsg_add_node:
-    .string "Error: No se pudo crear el nodo\n"
-
-
+############################################
+# string_proc_list_concat_asm
+############################################
 .global string_proc_list_concat_asm
 .type string_proc_list_concat_asm, @function
 string_proc_list_concat_asm:
-    push    %rbp
-    mov     %rsp, %rbp
-    push    %rbx                  ; guarda registros callee-saved
-    push    %r12
-    push    %r13
-    push    %r14
+    push    rbp
+    mov     rbp, rsp
+    push    rbx
+    push    r12
+    push    r13
+    push    r14
 
-    ; rdi = list
-    ; sil = type
-    ; rdx = hash
+    mov     rbx, rdi                # list
+    mov     r12b, sil               # type
+    mov     r13, rdx                # hash
 
-    mov     %rdi, %rbx            ; list → rbx
-    mov     %sil, %r12b           ; type → r12b
-    mov     %rdx, %r13            ; hash → r13
-
-    ; result = strdup(hash)
-    mov     %r13, %rdi
+    mov     rdi, r13
     call    strdup
-    mov     %rax, %r14            ; result → r14
+    mov     r14, rax                # result
 
-    ; current_node = list->first
-    mov     (%rbx), %rsi          ; current_node → rsi
+    mov     rsi, qword ptr [rbx]    # current_node = list->first
 
-.loop:
-    test    %rsi, %rsi
-    je      .done                 ; if current_node == NULL → fin
+.loop_concat:
+    test    rsi, rsi
+    je      .done_concat
 
-    ; if(current_node->type == type)
-    mov     16(%rsi), %al         ; current_node->type → al
-    cmp     %r12b, %al
-    jne     .next_node            ; si no coincide, salta
+    mov     al, byte ptr [rsi + 16]   # current_node->type
+    cmp     al, r12b
+    jne     .next_node
 
-    ; str_concat(result, current_node->hash)
-    mov     %r14, %rdi            ; arg1: result
-    mov     8(%rsi), %rsi         ; arg2: current_node->hash
+    mov     rdi, r14
+    mov     rsi, qword ptr [rsi + 8]  # current_node->hash
     call    str_concat
-    mov     %rax, %rdi            ; liberar result anterior
-    mov     %r14, %rdi
+    mov     rdi, r14
     call    free
-    mov     %rax, %r14            ; result = temp
+    mov     r14, rax
 
 .next_node:
-    mov     (%rsi), %rsi          ; current_node = current_node->next
-    jmp     .loop
+    mov     rsi, qword ptr [rsi]      # current_node = current_node->next
+    jmp     .loop_concat
 
-.done:
-    mov     %r14, %rax            ; return result
+.done_concat:
+    mov     rax, r14                  # return result
 
-    pop     %r14
-    pop     %r13
-    pop     %r12
-    pop     %rbx
+    pop     r14
+    pop     r13
+    pop     r12
+    pop     rbx
     leave
     ret
 
-
+############################################
+.section .rodata
+.errmsg_list:
+    .string "Error: No se pudo crear la lista\n"
+.errmsg_node:
+    .string "Error: No se pudo crear el nodo\n"
