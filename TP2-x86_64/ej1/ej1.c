@@ -1,3 +1,4 @@
+#define _POSIX_C_SOURCE 200809L
 #include "ej1.h"
 
 string_proc_list* string_proc_list_create(void){
