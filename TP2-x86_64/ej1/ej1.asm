@@ -38,20 +38,20 @@ string_proc_list_create_asm:
     ret
 
 string_proc_node_create_asm:
-    mov rdx, rdi            ; guardar type
-    mov rcx, rsi            ; guardar hash
+    mov rdx, rdi            ; type en rdx
+    mov rcx, rsi            ; hash en rcx
 
-    mov rdi, 16             ; malloc(16)
+    mov rdi, 32             ; malloc(32) CORRECTO
     call malloc
 
     test rax, rax
     je .error
 
-    ; rax = node
-    mov byte [rax], dl      ; type
-    mov qword [rax + 4], rcx    ; hash
-    mov qword [rax + 12], 0     ; next = NULL
-    mov qword [rax + 20], 0     ; previous = NULL
+    ; rax = nodo
+    mov byte [rax], dl          ; type en offset 0
+    mov qword [rax + 8], rcx    ; hash en offset 8
+    mov qword [rax + 16], 0     ; next en offset 16
+    mov qword [rax + 24], 0     ; previous en offset 24
     ret
 
 .error:
@@ -77,8 +77,8 @@ string_proc_list_add_node_asm:
 
     ; nodo intermedio
     mov rax, [rdi + 8]  ; list->last
-    mov [rax + 12], rbx ; last->next = node
-    mov [rbx + 20], rax ; node->prev = last
+    mov [rax + 16], rbx ; last->next = node
+    mov [rbx + 24], rax ; node->prev = last
     mov [rdi + 8], rbx  ; list->last = node
     jmp .done
 
