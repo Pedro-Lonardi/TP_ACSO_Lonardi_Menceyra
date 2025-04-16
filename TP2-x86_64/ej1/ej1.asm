@@ -38,21 +38,20 @@ string_proc_list_create_asm:
     ret
 
 string_proc_node_create_asm:
-    mov rdx, rdi            ; guardo el type en rdx
-    mov rcx, rsi            ; hash en rcx
+    mov rdx, rdi            ; guardar type
+    mov rcx, rsi            ; guardar hash
 
-    mov rdi, 32             ; malloc(32) para el nodo completo
+    mov rdi, 16             ; malloc(16)
     call malloc
 
     test rax, rax
     je .error
 
-    ; rax = nodo
-    mov [rax], dl           ; almacenar solo el byte bajo de rdx
-    mov [rax + 4], rcx      ; hash
-    mov qword [rax + 12], 0 ; next = NULL
-    mov qword [rax + 20], 0 ; previous = NULL
-
+    ; rax = node
+    mov byte [rax], dl      ; type
+    mov qword [rax + 4], rcx    ; hash
+    mov qword [rax + 12], 0     ; next = NULL
+    mov qword [rax + 20], 0     ; previous = NULL
     ret
 
 .error:
