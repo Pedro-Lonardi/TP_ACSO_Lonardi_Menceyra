@@ -43,30 +43,16 @@ void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash)
 
 char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash){
 	string_proc_node* current_node = list->first;
-	if(current_node == NULL){
-		return NULL;
-	}
-	char* result = NULL;
+	char* result = strdup(hash);
+
 	while (current_node != NULL) {
 		if (current_node->type == type) {
-			if (result == NULL) {
-				result = strdup(current_node->hash);
-			} else {
-				char* temp = str_concat(result, current_node->hash);
-				free(result);
-				result = temp;
-			}
+			char* temp = str_concat(result, current_node->hash);
+			free(result);
+			result = temp;
 		}
 		current_node = current_node->next;
 	}
-	if (result == NULL) {
-		result = strdup(hash);
-	} else {
-		char* temp = str_concat(result, hash);
-		free(result);
-		result = temp;
-	}
-
 	return result;
 }
 
