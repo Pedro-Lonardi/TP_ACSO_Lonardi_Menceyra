@@ -51,7 +51,7 @@ char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash)
 			if(result == NULL){
 				result = str_concat(current_node->hash, hash);
 			}else{
-				char* temp = str_concat(result, current_node->hash);
+				char* temp = str_concat(current_node->hash, result);
 				free(result);
 				result = temp;
 			}
