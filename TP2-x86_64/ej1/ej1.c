@@ -1,10 +1,10 @@
-#define _POSIX_C_SOURCE 200809L
+// #define _POSIX_C_SOURCE 200809L
 #include "ej1.h"
 
 string_proc_list* string_proc_list_create(void){
 	string_proc_list* list = (string_proc_list*)malloc(sizeof(string_proc_list));
 	if(list == NULL){
-		fprintf(stderr, "Error: No se pudo crear la lista\n");
+		// fprintf(stderr, "Error: No se pudo crear la lista\n");
 		return NULL;
 	}
 	list->first = NULL;
@@ -15,7 +15,7 @@ string_proc_list* string_proc_list_create(void){
 string_proc_node* string_proc_node_create(uint8_t type, char* hash){
 	string_proc_node* node = (string_proc_node*)malloc(sizeof(string_proc_node));
 	if(node == NULL){
-		fprintf(stderr, "Error: No se pudo crear el nodo\n");
+		// fprintf(stderr, "Error: No se pudo crear el nodo\n");
 		return NULL;
 	}
 	node->type      = type;
@@ -28,7 +28,7 @@ string_proc_node* string_proc_node_create(uint8_t type, char* hash){
 void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash){
 	string_proc_node* node = string_proc_node_create(type, hash);
 	if(node == NULL){
-		fprintf(stderr, "Error: No se pudo crear el nodo\n");
+		// fprintf(stderr, "Error: No se pudo crear el nodo\n");
 		return;
 	}
 	if(list->first == NULL){
