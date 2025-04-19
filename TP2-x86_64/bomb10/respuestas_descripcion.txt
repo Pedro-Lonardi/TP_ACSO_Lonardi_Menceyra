@@ -1,0 +1,33 @@
+Pedro Lonardi Estrada
+plonardiestrada@udesa.edu.ar
+
+Fase 1:
+En phase_1 llama a la función strings_not_equal para comparar la entrada con la palabra esperada. 
+Si el resultado es 0 (es decir iguales) retorna, si no, llama a explode_bomb. Para resolverla, puse un breakpoint justo antes de la 
+llamada a strings_not_equal y printie el string esperado usando GDB. Ese mismo string lo escribí como primer línea de input.txt.
+
+Fase 2:
+Se suman los dos numeros del input y luego se comparan con 48902. Con GDB encontré este valor, y que uno de los dos números del input
+tiene que ser un número negativo.
+
+Fase 3:
+Para esta fase, descubri que que el input esperado era un string seguido de un número ("%s %d"). Usando GDB concluí que el string
+se le aplicaba una función "cuenta" que lo que hace es una busqueda binaria recursiva de la palabra que pase como input en un array 
+(probablemente palabras.txt) con  palabras ordenadas lexicográficamente y sumaba cada "mid" (indice en el archivo palabras.txt) 
+calculado por iteración de la busqueda, ese número es el que devolvia, y luego se comparaba con el número del input, si eran iguales 
+se defusaba la bomba.
+
+Fase 4:
+Lee un input con sscanf("%s") que exige que sea un string de 6 caracteres (strlen(buf)==6). A este string se le aplica una función
+que lo codifica a otro string y luego se compara con uno en especifico, en mi caso "felino". Con GDB obtuve la tabla de traducción 
+(codificación) de 16 bytes en memoria y la cadena esperada (“felina”). Invertí el mapeo nibble→carácter usando los caracteres ‘4’, ‘0’, 
+‘?’, '6', ':', '5', para que la mascara (c & 0xF) me de el índice correcto para formar el string "felina". Otros caracteres que den los
+mismos nibbles despues de aplicarle la máscara (c & 0xF) podrían ser '$@/&*%', ya que lo que hace la máscara es agarrar el último nibble
+de cada byte y lo convierte a un número entre 0 y 15, lo cuales estaban asígando a los caracteres de la tabla de traducción, que son los
+que apuntaban a los caracteres de la palabra "felina".
+
+Fase Secreta:
+secret_phase lee un entero N y comprueba que 1 ≤ N ≤ 1001. Luego carga la raíz de un árbol (`n1`) y llama a 
+fun7(n1, N), una función que devuelve 0..3 según el camino en el árbol. La fase secreta espera que fun7(...) == 3. Usando GDB  
+cargue 'rdi = &n1, hice un bucle 'for i in 1..1001 { if (fun7(n1,i)==3) print i; break; }' y hallé N = 99, el número que desactiva
+la fase secreta.
