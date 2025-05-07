@@ -19,16 +19,16 @@ int file_getblock(struct unixfilesystem *fs, int inumber, int blockNum, void *bu
         return -1;
     }
 
-    if (diskimg_readblock(fs->dfd, dataBlockNum, buf) < 0) {
+    if (diskimg_readsector(fs->dfd, dataBlockNum, buf) < 0) {
         return -1;
     }
 
     int fileSize = inode_getsize(&in);
-    int totalFullBlocks = fileSize / BLOCK_SIZE;
-    int remainder = fileSize % BLOCK_SIZE;
+    int totalFullBlocks = fileSize / DISKIMG_SECTOR_SIZE;
+    int remainder = fileSize % DISKIMG_SECTOR_SIZE;
 
     if (blockNum < totalFullBlocks) {
-        return BLOCK_SIZE;
+        return DISKIMG_SECTOR_SIZE;
     } else if (blockNum == totalFullBlocks) {
         return remainder;
     } else {

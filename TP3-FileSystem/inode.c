@@ -13,16 +13,17 @@
  */
 int inode_iget(struct unixfilesystem *fs, int inumber, struct inode *inp) {
     //Implement Code Here
-    if (inumber < 1 || inumber > fs->superblock.s_isize * INODES_PER_BLOCK) {
+    // Validación del inumber (comienza en 1)
+    if (inumber < 1 || inumber > fs->superblock.s_isize * (DISKIMG_SECTOR_SIZE / sizeof(struct inode))) {
         return -1;
     }
 
     int inumber0 = inumber - 1;
-    int blockNum = inumber0 / INODES_PER_BLOCK;
-    int offset = inumber0 % INODES_PER_BLOCK;
+    int blockNum = inumber0 / (DISKIMG_SECTOR_SIZE / sizeof(struct inode));
+    int offset = inumber0 % (DISKIMG_SECTOR_SIZE / sizeof(struct inode));
 
-    char buffer[BLOCK_SIZE];
-    if (diskimg_readblock(fs->dfd, INODE_START_SECTOR + blockNum, buffer) < 0) {
+    char buffer[DISKIMG_SECTOR_SIZE];
+    if (diskimg_readsector(fs->dfd, INODE_START_SECTOR + blockNum, buffer) < 0) {
         return -1;
     }
 
