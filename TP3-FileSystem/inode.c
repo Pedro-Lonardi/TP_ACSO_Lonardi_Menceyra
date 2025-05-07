@@ -59,7 +59,7 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
             int indirBlockOffset = blockNum % 256;
 
             uint16_t indir[256];
-            if (diskimg_readblock(fs->dfd, inp->i_addr[indirBlockIndex], (char *)indir) < 0) {
+            if (diskimg_readsector(fs->dfd, inp->i_addr[indirBlockIndex], (char *)indir) < 0) {
                 return -1;
             }
             return indir[indirBlockOffset];
@@ -69,12 +69,12 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
             int indir2 = adjusted % 256;
 
             uint16_t firstLevel[256];
-            if (diskimg_readblock(fs->dfd, inp->i_addr[7], (char *)firstLevel) < 0) {
+            if (diskimg_readsector(fs->dfd, inp->i_addr[7], (char *)firstLevel) < 0) {
                 return -1;
             }
 
             uint16_t secondLevel[256];
-            if (diskimg_readblock(fs->dfd, firstLevel[indir1], (char *)secondLevel) < 0) {
+            if (diskimg_readsector(fs->dfd, firstLevel[indir1], (char *)secondLevel) < 0) {
                 return -1;
             }
 
