@@ -3,6 +3,9 @@
 #include <stdlib.h>
 #include "inode.h"
 #include "diskimg.h"
+#include "unixfilesystem.h"
+#include "ino.h"
+
 
 
 /**
