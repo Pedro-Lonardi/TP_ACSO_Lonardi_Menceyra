@@ -13,7 +13,6 @@
  */
 int inode_iget(struct unixfilesystem *fs, int inumber, struct inode *inp) {
     //Implement Code Here
-    // Validación del inumber (comienza en 1)
     if (inumber < 1 || inumber > fs->superblock.s_isize * (DISKIMG_SECTOR_SIZE / sizeof(struct inode))) {
         return -1;
     }
@@ -39,17 +38,15 @@ int inode_iget(struct unixfilesystem *fs, int inumber, struct inode *inp) {
 int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum) {  
     //Implement code here
     if ((inp->i_mode & IALLOC) == 0) {
-        return -1; // inode not allocated
+        return -1;
     }
 
     if ((inp->i_mode & ILARG) == 0) {
-        // archivo "pequeño": bloques directos
         if (blockNum < 0 || blockNum >= 8) {
             return -1;
         }
         return inp->i_addr[blockNum];
     } else {
-        // archivo "grande": bloques indirectos
         if (blockNum < 0 || blockNum >= 7 * 256 + 256 * 256) {
             return -1;
         }
