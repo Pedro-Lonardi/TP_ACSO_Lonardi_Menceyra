@@ -32,10 +32,7 @@ int main(int argc, char **argv)
 
     for (int i = 0; i < n; i++) {
         pid = fork();
-        if (pid == -1) {
-            perror("fork");
-            exit(1);
-        } else if (pid == 0) {
+        if (pid == 0) {
             for (int j = 0; j < n; j++) {
                 if (j != i) close(pipes[j][0]);
                 if (j != (i + n - 1) % n) close(pipes[j][1]);
