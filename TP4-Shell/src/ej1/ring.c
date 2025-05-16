@@ -43,7 +43,9 @@ int main(int argc, char **argv)
 
             int msg;
             read(pipes[(i + n - 1) % n][0], &msg, sizeof(int));
+            printf("Proceso %d recibió: %d\n", i, msg);
             msg++;
+            printf("Proceso %d envía: %d\n", i, msg + 1);
             write(pipes[i][1], &msg, sizeof(int));
 
             exit(0);
