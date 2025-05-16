@@ -21,43 +21,52 @@ int main(int argc, char **argv)
     
    	/* You should start programming from here... */
 
-	int pipes[n][2];
+	int pipe_inicial[2];
+    int pipe_final[2];
+    int pipes[n][2];
+
+    pipe(pipe_inicial);
+    pipe(pipe_final);
 
     for (int i = 0; i < n; i++) {
-        if (pipe(pipes[i]) == -1) {
-            perror("pipe");
-            exit(1);
-        }
+        pipe(pipes[i]);
     }
 
     for (int i = 0; i < n; i++) {
-        pid = fork();
+        pid_t pid = fork();
         if (pid == 0) {
-            for (int j = 0; j < n; j++) {
-                if (j != i) close(pipes[j][0]);
-                if (j != (i + n - 1) % n) close(pipes[j][1]);
+            if (i == start) {
+                close(pipe_inicial[1]);
+                read(pipe_inicial[0], &value, sizeof(int));
+            } else {
+                close(pipes[(i + n - 1) % n][1]);
+                read(pipes[(i + n - 1) % n][0], &value, sizeof(int));
             }
 
-            int msg;
-            read(pipes[(i + n - 1) % n][0], &msg, sizeof(int));
-            printf("Proceso %d recibió: %d\n", i, msg);
-            msg++;
-            printf("Proceso %d envía: %d\n", i, msg + 1);
-            write(pipes[i][1], &msg, sizeof(int));
+            printf("Proceso %d recibió: %d\n", i, value);
+            value++;
+            printf("Proceso %d envía: %d\n", i, value);
+
+            if ((i + 1) % n == start) {
+                close(pipe_final[0]);
+                write(pipe_final[1], &value, sizeof(int));
+            } else {
+                close(pipes[i][0]);
+                write(pipes[i][1], &value, sizeof(int));
+            }
 
             exit(0);
         }
     }
 
-    for (int i = 0; i < n; i++) {
-        if (i != (start + n - 1) % n) close(pipes[i][1]);
-        if (i != (start + n - 2 + n) % n) close(pipes[i][0]);
-    }
+    close(pipe_inicial[0]);
+    write(pipe_inicial[1], &value, sizeof(int));
 
-    write(pipes[(start + n - 1) % n][1], buffer, sizeof(int));
+    close(pipe_final[1]);
+    int result;
+    read(pipe_final[0], &result, sizeof(int));
 
-    read(pipes[(start + n - 2) % n][0], buffer, sizeof(int));
-    printf("Resultado final: %d\n", buffer[0]);
+    printf("Resultado final: %d\n", result);
 
     for (int i = 0; i < n; i++) {
         wait(NULL);
