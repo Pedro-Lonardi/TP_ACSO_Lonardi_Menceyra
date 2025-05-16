@@ -52,6 +52,11 @@ int main(int argc, char **argv)
         }
     }
 
+    for (int i = 0; i < n; i++) {
+        if (i != (start + n - 1) % n) close(pipes[i][1]);
+        if (i != (start + n - 2 + n) % n) close(pipes[i][0]);
+    }
+
     write(pipes[(start + n - 1) % n][1], buffer, sizeof(int));
 
     read(pipes[(start + n - 2) % n][0], buffer, sizeof(int));
