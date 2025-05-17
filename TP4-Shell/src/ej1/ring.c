@@ -37,22 +37,22 @@ int main(int argc, char **argv)
         if (pid == 0) {
             if (i == start) {
                 close(pipe_inicial[1]);
-                read(pipe_inicial[0], &buffer, sizeof(int));
+                read(pipe_inicial[0], buffer, sizeof(int));
             } else {
                 close(pipes[(i + n - 1) % n][1]);
-                read(pipes[(i + n - 1) % n][0], &buffer, sizeof(int));
+                read(pipes[(i + n - 1) % n][0], buffer, sizeof(int));
             }
 
-            printf("Proceso %d recibió: %d\n", i, buffer);
-            buffer++;
-            printf("Proceso %d envía: %d\n", i, buffer);
+            printf("Proceso %d recibió: %d\n", i, buffer[0]);
+            buffer[0]++;
+            printf("Proceso %d envía: %d\n", i, buffer[0]);
 
             if ((i + 1) % n == start) {
                 close(pipe_final[0]);
-                write(pipe_final[1], &buffer, sizeof(int));
+                write(pipe_final[1], buffer, sizeof(int));
             } else {
                 close(pipes[i][0]);
-                write(pipes[i][1], &buffer, sizeof(int));
+                write(pipes[i][1], buffer, sizeof(int));
             }
 
             exit(0);
@@ -60,7 +60,7 @@ int main(int argc, char **argv)
     }
 
     close(pipe_inicial[0]);
-    write(pipe_inicial[1], &buffer, sizeof(int));
+    write(pipe_inicial[1], buffer, sizeof(int));
 
     close(pipe_final[1]);
     int result;
