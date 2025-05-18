@@ -42,10 +42,9 @@ int main() {
 
         int prev_pipe_fd[2] = {-1, -1};
 
-        printf("Command %d: %s\n", i, commands[i]);
-
         for (int i = 0; i < command_count; i++) 
         {
+            printf("Command %d: %s\n", i, commands[i]);
 
             char *args[50];
             int argc = 0;
