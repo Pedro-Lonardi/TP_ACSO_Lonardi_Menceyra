@@ -6,6 +6,18 @@
 
 #define MAX_COMMANDS 200
 
+char *trim(char *str) {
+    while (*str == ' ') str++;
+
+    char *end = str + strlen(str) - 1;
+    while (end > str && *end == ' ') {
+        *end = '\0';
+        end--;
+    }
+
+    return str;
+}
+
 int main() {
 
     char command[256];
@@ -34,7 +46,7 @@ int main() {
         char *token = strtok(command, "|");
         while (token != NULL) 
         {
-            commands[command_count++] = token;
+            commands[command_count++] = trim(token);
             token = strtok(NULL, "|");
         }
 
