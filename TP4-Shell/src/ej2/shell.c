@@ -91,6 +91,10 @@ int main() {
                     prev_pipe_fd[1] = pipe_fd[1];
                     close(pipe_fd[1]);
                 }
+                else {
+                    if (prev_pipe_fd[0] != -1) close(prev_pipe_fd[0]);
+                    if (prev_pipe_fd[1] != -1) close(prev_pipe_fd[1]);
+                }
             } else {
                 perror("fork");
                 exit(EXIT_FAILURE);
