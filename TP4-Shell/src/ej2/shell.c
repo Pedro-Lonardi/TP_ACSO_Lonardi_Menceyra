@@ -6,18 +6,6 @@
 
 #define MAX_COMMANDS 200
 
-char *trim(char *str) {
-    while (*str == ' ') str++;
-
-    char *end = str + strlen(str) - 1;
-    while (end > str && *end == ' ') {
-        *end = '\0';
-        end--;
-    }
-
-    return str;
-}
-
 int main() {
 
     char command[256];
@@ -46,7 +34,7 @@ int main() {
         char *token = strtok(command, "|");
         while (token != NULL) 
         {
-            commands[command_count++] = trim(token);
+            commands[command_count++] = token;
             token = strtok(NULL, "|");
         }
 
@@ -69,10 +57,6 @@ int main() {
             args[argc] = NULL;
 
             int pipe_fd[2];
-            if (i < command_count - 1) {
-                pipe(pipe_fd);
-            }
-
             if (i < command_count - 1) {
                 pipe(pipe_fd);
                 printf(">> pipe() creado: fd[%d,%d] para comando %d\n", pipe_fd[0], pipe_fd[1], i);
