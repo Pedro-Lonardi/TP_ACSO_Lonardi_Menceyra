@@ -29,6 +29,7 @@ int main() {
            The strtok() function breaks the command string into tokens (substrings) separated by the pipe character |. 
            In each iteration of the while loop, strtok() returns the next token found in command. 
            The tokens are stored in the commands[] array, and command_count is incremented to keep track of the number of tokens found. */
+        int command_count = 0;
         char *token = strtok(command, "|");
         while (token != NULL) 
         {
@@ -38,7 +39,6 @@ int main() {
 
         /* You should start programming from here... */
 
-        int command_count = 0;
         int prev_pipe_fd[2] = {-1, -1};
 
         for (int i = 0; i < command_count; i++) 
