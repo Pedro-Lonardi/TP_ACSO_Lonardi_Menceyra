@@ -10,7 +10,6 @@ int main() {
 
     char command[256];
     char *commands[MAX_COMMANDS];
-    int command_count = 0;
 
     while (1) 
     {
@@ -38,9 +37,67 @@ int main() {
         }
 
         /* You should start programming from here... */
+
+        int command_count = 0;
+        int prev_pipe_fd[2] = {-1, -1};
+
         for (int i = 0; i < command_count; i++) 
         {
             printf("Command %d: %s\n", i, commands[i]);
+
+            char *args[50];
+            int argc = 0;
+
+            char *arg = strtok(commands[i], " ");
+            while (arg != NULL) {
+                args[argc++] = arg;
+                arg = strtok(NULL, " ");
+            }
+            args[argc] = NULL;
+
+            int pipe_fd[2];
+            if (i < command_count - 1) {
+                pipe(pipe_fd);
+            }
+
+            pid_t pid = fork();
+            if (pid == 0) {
+
+                if (i > 0) {
+                    dup2(prev_pipe_fd[0], STDIN_FILENO);
+                    close(prev_pipe_fd[0]);
+                    close(prev_pipe_fd[1]);
+                }
+
+                if (i < command_count - 1) {
+                    close(pipe_fd[0]);
+                    dup2(pipe_fd[1], STDOUT_FILENO);
+                    close(pipe_fd[1]);
+                }
+
+                execvp(args[0], args);
+                perror("execvp");
+                exit(EXIT_FAILURE);
+            } else if (pid > 0) {
+
+                if (i > 0) {
+                    close(prev_pipe_fd[0]);
+                    close(prev_pipe_fd[1]);
+                }
+
+                if (i < command_count - 1) {
+                    prev_pipe_fd[0] = pipe_fd[0];
+                    prev_pipe_fd[1] = pipe_fd[1];
+                    close(pipe_fd[1]);
+                }
+            } else {
+                perror("fork");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        for (int i = 0; i < command_count; i++) {
+            wait(NULL);
         }    
     }
     return 0;
