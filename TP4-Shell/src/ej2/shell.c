@@ -42,9 +42,10 @@ int main() {
 
         int prev_pipe_fd[2] = {-1, -1};
 
+        printf("Command %d: %s\n", i, commands[i]);
+
         for (int i = 0; i < command_count; i++) 
         {
-            // printf("Command %d: %s\n", i, commands[i]);
 
             char *args[50];
             int argc = 0;
@@ -61,10 +62,17 @@ int main() {
                 pipe(pipe_fd);
             }
 
+            if (i < command_count - 1) {
+                pipe(pipe_fd);
+                printf(">> pipe() creado: fd[%d,%d] para comando %d\n", pipe_fd[0], pipe_fd[1], i);
+            }
+
             pid_t pid = fork();
             if (pid == 0) {
+                printf(">> (hijo %d) Ejecutando: %s\n", i, args[0]);
 
                 if (i > 0) {
+                    printf(">> (hijo %d) dup2 prev_pipe_fd[0] (%d) -> STDIN\n", i, prev_pipe_fd[0]);
                     dup2(prev_pipe_fd[0], STDIN_FILENO);
                     close(prev_pipe_fd[0]);
                     close(prev_pipe_fd[1]);
@@ -72,12 +80,14 @@ int main() {
 
                 if (i < command_count - 1) {
                     close(pipe_fd[0]);
+                    printf(">> (hijo %d) dup2 pipe_fd[1] (%d) -> STDOUT\n", i, pipe_fd[1]);
                     dup2(pipe_fd[1], STDOUT_FILENO);
                     close(pipe_fd[1]);
                 }
 
                 execvp(args[0], args);
                 perror("execvp");
+                printf(">> execvp falló: %s\n", args[0]);
                 exit(EXIT_FAILURE);
             } else if (pid > 0) {
 
@@ -102,6 +112,7 @@ int main() {
 
         for (int i = 0; i < command_count; i++) {
             wait(NULL);
+            printf(">> Comando %d finalizó\n", i);
         }
         if (prev_pipe_fd[0] != -1) close(prev_pipe_fd[0]);
         if (prev_pipe_fd[1] != -1) close(prev_pipe_fd[1]);
