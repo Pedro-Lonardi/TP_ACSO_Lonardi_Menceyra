@@ -14,6 +14,7 @@ int main() {
     while (1) 
     {
         printf("Shell> ");
+        fflush(stdout);
         
         /*Reads a line of input from the user from the standard input (stdin) and stores it in the variable command */
         fgets(command, sizeof(command), stdin);
@@ -43,7 +44,7 @@ int main() {
 
         for (int i = 0; i < command_count; i++) 
         {
-            printf("Command %d: %s\n", i, commands[i]);
+            // printf("Command %d: %s\n", i, commands[i]);
 
             char *args[50];
             int argc = 0;
