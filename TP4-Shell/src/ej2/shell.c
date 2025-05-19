@@ -90,6 +90,9 @@ int main() {
                     close(pipe_fd[1]);
                 }
 
+                for (int j = 0; args[j] != NULL; j++) {
+                    printf("    arg[%d] = '%s'\n", j, args[j]);
+                }
                 execvp(args[0], args);
                 perror("execvp");
                 printf(">> execvp falló: %s\n", args[0]);
