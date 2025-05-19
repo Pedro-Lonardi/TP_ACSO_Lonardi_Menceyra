@@ -69,7 +69,7 @@ int main() {
             int pipe_fd[2];
             if (i < command_count - 1) {
                 pipe(pipe_fd);
-                printf(">> pipe() creado: fd[%d,%d] para comando %d\n", pipe_fd[0], pipe_fd[1], i);
+                // printf(">> pipe() creado: fd[%d,%d] para comando %d\n", pipe_fd[0], pipe_fd[1], i);
             }
 
             pid_t pid = fork();
@@ -77,7 +77,7 @@ int main() {
                 printf(">> (hijo %d) Ejecutando: %s\n", i, args[0]);
 
                 if (i > 0) {
-                    printf(">> (hijo %d) dup2 prev_pipe_fd[0] (%d) -> STDIN\n", i, prev_pipe_fd[0]);
+                    // printf(">> (hijo %d) dup2 prev_pipe_fd[0] (%d) -> STDIN\n", i, prev_pipe_fd[0]);
                     dup2(prev_pipe_fd[0], STDIN_FILENO);
                     close(prev_pipe_fd[0]);
                     close(prev_pipe_fd[1]);
@@ -85,15 +85,15 @@ int main() {
 
                 if (i < command_count - 1) {
                     close(pipe_fd[0]);
-                    printf(">> (hijo %d) dup2 pipe_fd[1] (%d) -> STDOUT\n", i, pipe_fd[1]);
+                    // printf(">> (hijo %d) dup2 pipe_fd[1] (%d) -> STDOUT\n", i, pipe_fd[1]);
                     dup2(pipe_fd[1], STDOUT_FILENO);
                     close(pipe_fd[1]);
                 }
 
-                fprintf(stderr, "[DEBUG hijo %d] args:\n", i);
-                for (int j = 0; args[j] != NULL; j++) {
-                    fprintf(stderr, "    arg[%d] = \"%s\"\n", j, args[j]);
-                }
+                // fprintf(stderr, "[DEBUG hijo %d] args:\n", i);
+                // for (int j = 0; args[j] != NULL; j++) {
+                //     fprintf(stderr, "    arg[%d] = \"%s\"\n", j, args[j]);
+                // }
                 execvp(args[0], args);
                 perror("execvp");
                 printf(">> execvp falló: %s\n", args[0]);
