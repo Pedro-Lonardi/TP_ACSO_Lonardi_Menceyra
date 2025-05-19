@@ -16,35 +16,42 @@ char *trim(char *str) {
     return str;
 }
 
-void parse_args(const char *input, char *args[], int *argc) {
+void parse_args(const char *line, char **args, int *argc) {
+    int in_quote = 0;
+    char quote_char = '\0';
+    const char *p = line;
+    char token[256];
+    int t = 0;
+
     *argc = 0;
-    int in_single_quote = 0, in_double_quote = 0;
-    const char *p = input;
-    char buffer[512];
-    int buf_idx = 0;
 
     while (*p) {
-        if (*p == '\'' && !in_double_quote) {
-            in_single_quote = !in_single_quote;
-        } else if (*p == '\"' && !in_single_quote) {
-            in_double_quote = !in_double_quote;
-        } else if (*p == ' ' && !in_single_quote && !in_double_quote) {
-            if (buf_idx > 0) {
-                buffer[buf_idx] = '\0';
-                args[*argc] = strdup(buffer);
-                (*argc)++;
-                buf_idx = 0;
+        if ((*p == ' ' || *p == '\t') && !in_quote) {
+            if (t > 0) {
+                token[t] = '\0';
+                args[(*argc)++] = strdup(token);
+                t = 0;
+            }
+        } else if (*p == '\'' || *p == '"') {
+            if (in_quote && *p == quote_char) {
+                in_quote = 0;
+            } else if (!in_quote) {
+                in_quote = 1;
+                quote_char = *p;
+            } else {
+                token[t++] = *p;
             }
         } else {
-            buffer[buf_idx++] = *p;
+            token[t++] = *p;
         }
         p++;
     }
-    if (buf_idx > 0) {
-        buffer[buf_idx] = '\0';
-        args[*argc] = strdup(buffer);
-        (*argc)++;
+
+    if (t > 0) {
+        token[t] = '\0';
+        args[(*argc)++] = strdup(token);
     }
+
     args[*argc] = NULL;
 }
 
@@ -108,7 +115,7 @@ int main() {
 
             pid_t pid = fork();
             if (pid == 0) {
-                printf(">> (hijo %d) Ejecutando: %s\n", i, args[0]);
+                // printf(">> (hijo %d) Ejecutando: %s\n", i, args[0]);
 
                 if (i > 0) {
                     // printf(">> (hijo %d) dup2 prev_pipe_fd[0] (%d) -> STDIN\n", i, prev_pipe_fd[0]);
@@ -124,10 +131,10 @@ int main() {
                     close(pipe_fd[1]);
                 }
 
-                // fprintf(stderr, "[DEBUG hijo %d] args:\n", i);
-                // for (int j = 0; args[j] != NULL; j++) {
-                //     fprintf(stderr, "    arg[%d] = \"%s\"\n", j, args[j]);
-                // }
+                fprintf(stderr, "[DEBUG hijo %d] args:\n", i);
+                for (int j = 0; args[j] != NULL; j++) {
+                    fprintf(stderr, "    arg[%d] = \"%s\"\n", j, args[j]);
+                }
                 execvp(args[0], args);
                 perror("execvp");
                 printf(">> execvp falló: %s\n", args[0]);
