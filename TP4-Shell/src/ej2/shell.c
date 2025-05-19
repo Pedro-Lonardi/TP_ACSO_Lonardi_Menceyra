@@ -105,12 +105,9 @@ int main() {
                 }
 
                 if (i < command_count - 1) {
-                    close(pipe_fd[1]);
-                    if (i != command_count - 2) {
-                        close(pipe_fd[0]);
-                    }
                     prev_pipe_fd[0] = pipe_fd[0];
-                    prev_pipe_fd[1] = pipe_fd[1];
+                    prev_pipe_fd[1] = -1;
+                    close(pipe_fd[1]);
                 }
             } else {
                 perror("fork");
@@ -122,8 +119,6 @@ int main() {
             wait(NULL);
             printf(">> Comando %d finalizó\n", i);
         }
-        if (prev_pipe_fd[0] != -1) close(prev_pipe_fd[0]);
-        if (prev_pipe_fd[1] != -1) close(prev_pipe_fd[1]);
     }
     return 0;
 }
