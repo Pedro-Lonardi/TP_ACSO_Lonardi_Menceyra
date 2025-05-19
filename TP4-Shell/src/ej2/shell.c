@@ -73,14 +73,14 @@ int main() {
            In each iteration of the while loop, strtok() returns the next token found in command. 
            The tokens are stored in the commands[] array, and command_count is incremented to keep track of the number of tokens found. */
         int command_count = 0;
-        // char *token = strtok(command, "|");
-        // while (token != NULL) 
-        // {
-        //     commands[command_count++] = trim(token);
-        //     token = strtok(NULL, "|");
-        // }
+        char *token = strtok(command, "|");
+        while (token != NULL) 
+        {
+            commands[command_count++] = trim(token);
+            token = strtok(NULL, "|");
+        }
 
-        
+        // parse_args(commands[i], args, &argc);
 
         /* You should start programming from here... */
 
@@ -92,7 +92,6 @@ int main() {
 
             char *args[50];
             int argc = 0;
-            parse_args(commands[i], args, &argc);
 
             char *arg = strtok(commands[i], " ");
             while (arg != NULL) {
@@ -125,10 +124,10 @@ int main() {
                     close(pipe_fd[1]);
                 }
 
-                fprintf(stderr, "[DEBUG hijo %d] args:\n", i);
-                for (int j = 0; args[j] != NULL; j++) {
-                    fprintf(stderr, "    arg[%d] = \"%s\"\n", j, args[j]);
-                }
+                // fprintf(stderr, "[DEBUG hijo %d] args:\n", i);
+                // for (int j = 0; args[j] != NULL; j++) {
+                //     fprintf(stderr, "    arg[%d] = \"%s\"\n", j, args[j]);
+                // }
                 execvp(args[0], args);
                 perror("execvp");
                 printf(">> execvp falló: %s\n", args[0]);
