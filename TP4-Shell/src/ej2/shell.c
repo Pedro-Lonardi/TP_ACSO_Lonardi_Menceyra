@@ -16,42 +16,35 @@ char *trim(char *str) {
     return str;
 }
 
-void parse_args(const char *line, char **args, int *argc) {
-    int in_quote = 0;
-    char quote_char = '\0';
-    const char *p = line;
-    char token[256];
-    int t = 0;
-
+void parse_args(const char *input, char *args[], int *argc) {
     *argc = 0;
+    int in_single_quote = 0, in_double_quote = 0;
+    const char *p = input;
+    char buffer[512];
+    int buf_idx = 0;
 
     while (*p) {
-        if ((*p == ' ' || *p == '\t') && !in_quote) {
-            if (t > 0) {
-                token[t] = '\0';
-                args[(*argc)++] = strdup(token);
-                t = 0;
-            }
-        } else if (*p == '\'' || *p == '"') {
-            if (in_quote && *p == quote_char) {
-                in_quote = 0;
-            } else if (!in_quote) {
-                in_quote = 1;
-                quote_char = *p;
-            } else {
-                token[t++] = *p;
+        if (*p == '\'' && !in_double_quote) {
+            in_single_quote = !in_single_quote;
+        } else if (*p == '\"' && !in_single_quote) {
+            in_double_quote = !in_double_quote;
+        } else if (*p == ' ' && !in_single_quote && !in_double_quote) {
+            if (buf_idx > 0) {
+                buffer[buf_idx] = '\0';
+                args[*argc] = strdup(buffer);
+                (*argc)++;
+                buf_idx = 0;
             }
         } else {
-            token[t++] = *p;
+            buffer[buf_idx++] = *p;
         }
         p++;
     }
-
-    if (t > 0) {
-        token[t] = '\0';
-        args[(*argc)++] = strdup(token);
+    if (buf_idx > 0) {
+        buffer[buf_idx] = '\0';
+        args[*argc] = strdup(buffer);
+        (*argc)++;
     }
-
     args[*argc] = NULL;
 }
 
@@ -86,6 +79,8 @@ int main() {
         //     commands[command_count++] = trim(token);
         //     token = strtok(NULL, "|");
         // }
+
+        
 
         /* You should start programming from here... */
 
