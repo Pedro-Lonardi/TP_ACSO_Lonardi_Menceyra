@@ -115,13 +115,14 @@ int main() {
             }
         }
 
+        printf(">> Resultado:\n");
+        fflush(stdout)
+
         for (int i = 0; i < command_count; i++) {
             wait(NULL);
             printf(">> Comando %d finalizó\n", i);
         }
     }
-    printf(">> Resultado:\n");
-    fflush(stdout);
 
     return 0;
 }
