@@ -90,8 +90,9 @@ int main() {
                     close(pipe_fd[1]);
                 }
 
+                fprintf(stderr, "[DEBUG hijo %d] args:\n", i);
                 for (int j = 0; args[j] != NULL; j++) {
-                    printf("    arg[%d] = '%s'\n", j, args[j]);
+                    fprintf(stderr, "    arg[%d] = \"%s\"\n", j, args[j]);
                 }
                 execvp(args[0], args);
                 perror("execvp");
@@ -114,9 +115,6 @@ int main() {
                 exit(EXIT_FAILURE);
             }
         }
-
-        printf(">> Resultado:\n");
-        fflush(stdout);
 
         for (int i = 0; i < command_count; i++) {
             wait(NULL);
