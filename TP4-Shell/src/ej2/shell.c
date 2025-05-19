@@ -16,6 +16,38 @@ char *trim(char *str) {
     return str;
 }
 
+void parse_args(const char *input, char *args[], int *argc) {
+    *argc = 0;
+    int in_single_quote = 0, in_double_quote = 0;
+    const char *p = input;
+    char buffer[512];
+    int buf_idx = 0;
+
+    while (*p) {
+        if (*p == '\'' && !in_double_quote) {
+            in_single_quote = !in_single_quote;
+        } else if (*p == '\"' && !in_single_quote) {
+            in_double_quote = !in_double_quote;
+        } else if (*p == ' ' && !in_single_quote && !in_double_quote) {
+            if (buf_idx > 0) {
+                buffer[buf_idx] = '\0';
+                args[*argc] = strdup(buffer);
+                (*argc)++;
+                buf_idx = 0;
+            }
+        } else {
+            buffer[buf_idx++] = *p;
+        }
+        p++;
+    }
+    if (buf_idx > 0) {
+        buffer[buf_idx] = '\0';
+        args[*argc] = strdup(buffer);
+        (*argc)++;
+    }
+    args[*argc] = NULL;
+}
+
 int main() {
 
     char command[256];
@@ -41,12 +73,14 @@ int main() {
            In each iteration of the while loop, strtok() returns the next token found in command. 
            The tokens are stored in the commands[] array, and command_count is incremented to keep track of the number of tokens found. */
         int command_count = 0;
-        char *token = strtok(command, "|");
-        while (token != NULL) 
-        {
-            commands[command_count++] = trim(token);
-            token = strtok(NULL, "|");
-        }
+        // char *token = strtok(command, "|");
+        // while (token != NULL) 
+        // {
+        //     commands[command_count++] = trim(token);
+        //     token = strtok(NULL, "|");
+        // }
+
+        parse_args(commands[i], args, &argc);
 
         /* You should start programming from here... */
 
