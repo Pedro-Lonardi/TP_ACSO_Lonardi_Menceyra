@@ -120,5 +120,8 @@ int main() {
             printf(">> Comando %d finalizó\n", i);
         }
     }
+    printf(">> Resultado:\n");
+    fflush(stdout);
+
     return 0;
 }
