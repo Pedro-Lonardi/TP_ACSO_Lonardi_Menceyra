@@ -116,7 +116,7 @@ int main() {
         }
 
         printf(">> Resultado:\n");
-        fflush(stdout)
+        fflush(stdout);
 
         for (int i = 0; i < command_count; i++) {
             wait(NULL);
