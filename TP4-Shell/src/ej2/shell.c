@@ -87,8 +87,6 @@ int main() {
         //     token = strtok(NULL, "|");
         // }
 
-        parse_args(commands[i], args, &argc);
-
         /* You should start programming from here... */
 
         int prev_pipe_fd[2] = {-1, -1};
@@ -99,6 +97,7 @@ int main() {
 
             char *args[50];
             int argc = 0;
+            parse_args(commands[i], args, &argc);
 
             char *arg = strtok(commands[i], " ");
             while (arg != NULL) {
