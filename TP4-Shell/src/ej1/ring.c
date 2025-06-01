@@ -17,6 +17,12 @@ int main(int argc, char **argv)
 	n = atoi(argv[1]);
     buffer[0] = atoi(argv[2]);
     start = atoi(argv[3]);
+
+    if (start < 0 || start >= n) {
+        fprintf(stderr, "Error: el proceso inicial debe estar entre 0 y %d.\n", n - 1);
+        exit(EXIT_FAILURE);
+    }
+
     printf("Se crearán %i procesos, se enviará el caracter %i desde proceso %i \n", n, buffer[0], start);
     
    	/* You should start programming from here... */

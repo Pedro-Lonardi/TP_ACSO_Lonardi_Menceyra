@@ -127,8 +127,8 @@ int main() {
             } else if (pid > 0) {
 
                 if (i > 0) {
-                    if (prev_pipe_fd[0] != -1) close(prev_pipe_fd[0]);
-                    if (prev_pipe_fd[1] != -1) close(prev_pipe_fd[1]);
+                    close(prev_pipe_fd[0]);
+                    close(prev_pipe_fd[1]);
                 }
 
                 if (i < command_count - 1) {
@@ -147,7 +147,7 @@ int main() {
             // printf(">> Comando %d finalizó\n", i);
         }
 
-        if (strcmp(command, "exit") == 0) break;
+        // if (strcmp(command, "exit") == 0) break;
     }
 
     return 0;
