@@ -127,8 +127,8 @@ int main() {
             } else if (pid > 0) {
 
                 if (i > 0) {
-                    close(prev_pipe_fd[0]);
-                    close(prev_pipe_fd[1]);
+                    if (prev_pipe_fd[0] != -1) close(prev_pipe_fd[0]);
+                    if (prev_pipe_fd[1] != -1) close(prev_pipe_fd[1]);
                 }
 
                 if (i < command_count - 1) {
