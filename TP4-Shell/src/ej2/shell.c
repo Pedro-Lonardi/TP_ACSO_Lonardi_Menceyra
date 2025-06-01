@@ -146,9 +146,9 @@ int main() {
             wait(NULL);
             // printf(">> Comando %d finalizó\n", i);
         }
-    }
 
-    if (strcmp(command, "exit") == 0) break;
+        if (strcmp(command, "exit") == 0) break;
+    }
 
     return 0;
 }
