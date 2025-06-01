@@ -16,37 +16,30 @@ char *trim(char *str) {
     return str;
 }
 
-// void parse_args(const char *input, char *args[], int *argc) {
-//     *argc = 0;
-//     int in_single_quote = 0, in_double_quote = 0;
-//     const char *p = input;
-//     char buffer[512];
-//     int buf_idx = 0;
+void parse_args(char *input, char **args, int *argc) {
+    int i = 0;
+    *argc = 0;
+    while (input[i]) {
+        while (input[i] == ' ') i++;
 
-//     while (*p) {
-//         if (*p == '\'' && !in_double_quote) {
-//             in_single_quote = !in_single_quote;
-//         } else if (*p == '\"' && !in_single_quote) {
-//             in_double_quote = !in_double_quote;
-//         } else if (*p == ' ' && !in_single_quote && !in_double_quote) {
-//             if (buf_idx > 0) {
-//                 buffer[buf_idx] = '\0';
-//                 args[*argc] = strdup(buffer);
-//                 (*argc)++;
-//                 buf_idx = 0;
-//             }
-//         } else {
-//             buffer[buf_idx++] = *p;
-//         }
-//         p++;
-//     }
-//     if (buf_idx > 0) {
-//         buffer[buf_idx] = '\0';
-//         args[*argc] = strdup(buffer);
-//         (*argc)++;
-//     }
-//     args[*argc] = NULL;
-// }
+        if (input[i] == '\0') break;
+
+        if (input[i] == '"') {
+            i++;
+            char *start = &input[i];
+            while (input[i] && input[i] != '"') i++;
+            if (input[i] == '"') input[i++] = '\0';
+            args[(*argc)++] = start;
+        } else {
+            char *start = &input[i];
+            while (input[i] && input[i] != ' ') i++;
+            if (input[i]) input[i++] = '\0';
+            args[(*argc)++] = start;
+        }
+    }
+    args[*argc] = NULL;
+}
+
 
 int main() {
 
@@ -80,25 +73,24 @@ int main() {
             token = strtok(NULL, "|");
         }
 
-        // parse_args(commands[i], args, &argc);
-
         /* You should start programming from here... */
 
         int prev_pipe_fd[2] = {-1, -1};
 
         for (int i = 0; i < command_count; i++) 
         {
-            printf("Command %d: %s\n", i, commands[i]);
+            // printf(">> Command %d: %s\n", i, commands[i]);
 
             char *args[50];
             int argc = 0;
 
-            char *arg = strtok(commands[i], " ");
-            while (arg != NULL) {
-                args[argc++] = arg;
-                arg = strtok(NULL, " ");
-            }
-            args[argc] = NULL;
+            // char *arg = strtok(commands[i], " ");
+            // while (arg != NULL) {
+            //     args[argc++] = arg;
+            //     arg = strtok(NULL, " ");
+            // }
+            // args[argc] = NULL;
+            parse_args(commands[i], args, &argc);
 
             int pipe_fd[2];
             if (i < command_count - 1) {
@@ -152,7 +144,7 @@ int main() {
 
         for (int i = 0; i < command_count; i++) {
             wait(NULL);
-            printf(">> Comando %d finalizó\n", i);
+            // printf(">> Comando %d finalizó\n", i);
         }
     }
 
