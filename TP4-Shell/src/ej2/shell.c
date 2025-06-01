@@ -148,5 +148,7 @@ int main() {
         }
     }
 
+    if (strcmp(command, "exit") == 0) break;
+
     return 0;
 }
