@@ -116,10 +116,6 @@ int main() {
                     close(pipe_fd[1]);
                 }
 
-                // fprintf(stderr, "[DEBUG hijo %d] args:\n", i);
-                // for (int j = 0; args[j] != NULL; j++) {
-                //     fprintf(stderr, "    arg[%d] = \"%s\"\n", j, args[j]);
-                // }
                 execvp(args[0], args);
                 perror("execvp");
                 printf(">> execvp falló: %s\n", args[0]);
