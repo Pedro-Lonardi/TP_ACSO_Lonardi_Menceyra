@@ -28,7 +28,7 @@ void ThreadPool::schedule(const function<void(void)>& thunk) {
             pendingTasks++;
         }
     }
-    taskAvailable.notify_all(); // ver si dejar notify_all o hacerlo uno por uno (en clase recomendaron all)
+    taskAvailable.notify_all();
 }
 
 void ThreadPool::dispatcher() {
