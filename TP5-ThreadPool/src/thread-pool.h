@@ -37,7 +37,7 @@ typedef struct worker {
      * Complete the definition of the worker_t struct here...
      **/
     Semaphore ready{0};
-    bool available = true;
+    atomic<bool> available {true};
     mutex mtx;
 } worker_t;
 
