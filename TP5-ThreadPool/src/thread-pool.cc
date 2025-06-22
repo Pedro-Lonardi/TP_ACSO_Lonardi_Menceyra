@@ -47,7 +47,10 @@ void ThreadPool::dispatcher() {
             for (auto& wt : wts) {
                 if (wt.available) {
                     wt.available = false;
-                    wt.thunk = task;
+                    {
+                        lock_guard<mutex> guard(wt.mtx);
+                        wt.thunk = task;
+                    }
                     wt.ready.signal();
                     goto siguiente_iteracion;
                 }
@@ -65,9 +68,12 @@ void ThreadPool::worker(int id) {
         wt.ready.wait();
         if (done) break;
 
-        if (wt.thunk) {
-            wt.thunk();
-            wt.thunk = nullptr;
+        {
+            lock_guard<mutex> guard(wt.mtx);
+            if (wt.thunk) {
+                wt.thunk();
+                wt.thunk = nullptr;
+            }
         }
 
         wt.available = true;

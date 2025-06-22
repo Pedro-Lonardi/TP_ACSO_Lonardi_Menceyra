@@ -38,6 +38,7 @@ typedef struct worker {
      **/
     Semaphore ready{0};
     bool available = true;
+    mutex mtx;
 } worker_t;
 
 class ThreadPool {
