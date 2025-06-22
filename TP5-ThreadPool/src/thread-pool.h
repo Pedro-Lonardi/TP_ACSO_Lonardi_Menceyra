@@ -34,6 +34,8 @@ typedef struct worker {
     /**
      * Complete the definition of the worker_t struct here...
      **/
+    Semaphore ready{0};
+    bool available = true;
 } worker_t;
 
 class ThreadPool {
@@ -74,6 +76,14 @@ class ThreadPool {
     vector<worker_t> wts;                   // worker thread handles. you may want to change/remove this
     bool done;                              // flag to indicate the pool is being destroyed
     mutex queueLock;                        // mutex to protect the queue of tasks
+    queue<function<void(void)>> taskQueue;  // cola FIFO de tareas
+    condition_variable_any taskAvailable;
+    mutex taskQueueMutex;
+
+    mutex waitMutex;
+    condition_variable_any waitCv;
+    size_t pendingTasks = 0;
+
 
     /* It is incomplete, there should be more private variables to manage the structures... 
     * *
