@@ -17,6 +17,8 @@ ThreadPool::ThreadPool(size_t numThreads) : wts(numThreads), done(false), pendin
 
 
 void ThreadPool::schedule(const function<void(void)>& thunk) {
+    if (!isAlive.load()) throw runtime_error("Cannot schedule on destroyed ThreadPool");
+    if (!thunk) throw invalid_argument("Thunk cannot be null");
     {
         lock_guard<mutex> lock(taskQueueMutex);
         taskQueue.push(thunk);
@@ -84,6 +86,7 @@ void ThreadPool::wait() {
 
 ThreadPool::~ThreadPool() {
     wait();
+    isAlive = false;
     {
         lock_guard<mutex> lock(taskQueueMutex);
         done = true;

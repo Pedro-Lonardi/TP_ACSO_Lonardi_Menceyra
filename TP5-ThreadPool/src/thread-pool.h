@@ -80,10 +80,10 @@ class ThreadPool {
     queue<function<void(void)>> taskQueue;  // cola FIFO de tareas
     condition_variable_any taskAvailable;
     mutex taskQueueMutex;
-
     mutex waitMutex;
     condition_variable_any waitCv;
     size_t pendingTasks = 0;
+    atomic<bool> isAlive{true};
 
 
     /* It is incomplete, there should be more private variables to manage the structures... 
